@@ -85,20 +85,14 @@ class RegistrationTest(TestCase):
         response = self.client.get(url.replace("dGVz", "dGVa", 1), follow=True)
         self.assertEqual(
             _messages(response),
-            [
-                "Unable to verify the signature. Please request a new"
-                " registration link."
-            ],
+            ["Unable to verify the signature. Please request a new registration link."],
         )
 
         user.delete()
         response = self.client.get(url, follow=True)
         self.assertEqual(
             _messages(response),
-            [
-                "Unable to verify the signature. Please request a new"
-                " registration link."
-            ],
+            ["Unable to verify the signature. Please request a new registration link."],
         )
 
     def test_empty_render_to_mail(self):

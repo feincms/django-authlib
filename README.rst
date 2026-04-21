@@ -384,6 +384,11 @@ permission string (``"app_label.codename"``) against two lists of
 
 Use ``functools.partial`` to bind the pattern lists, as shown above.
 
+Because permissions are matched by glob rather than enumerated explicitly,
+roles automatically cover new models as they are added.  For example, an
+``"editor"`` role with ``allow={"cms.*"}`` will grant access to every new
+CMS plugin model without any manual permission assignment.
+
 Adding ``RoleField`` to a custom user model
 -------------------------------------------
 

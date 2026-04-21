@@ -286,3 +286,116 @@ The above template is inspired from:
 * `Django login template <https://github.com/django/django/blob/67d0c4644acfd7707be4a31e8976f865509b09ac/django/contrib/admin/templates/admin/login.html#L21-L44>`_
 
 More details are documented in `the relevant module <https://github.com/matthiask/django-authlib/blob/main/authlib/email.py>`_.
+
+
+Roles
+=====
+
+``authlib.roles`` provides a lightweight role-based permission system for
+staff users. Instead of assigning individual Django permissions to each
+staff member, you define named roles in ``AUTHLIB_ROLES`` and attach a
+permission-checking callback to each role.
+
+``RoleField`` is a ``CharField`` that stores the role on the user model and
+hooks into Django's permission system. ``authlib.little_auth.User`` already
+includes a ``role = RoleField()`` field, so if you use *Little Auth* you only
+need to configure the setting.
+
+Setup
+-----
+
+Add ``authlib.backends.PermissionsBackend`` to ``AUTHENTICATION_BACKENDS``,
+**before** any backend that checks database-level permissions (such as
+``ModelBackend`` or ``EmailBackend``):
+
+.. code-block:: python
+
+    AUTHENTICATION_BACKENDS = [
+        "authlib.backends.PermissionsBackend",
+        "authlib.backends.EmailBackend",   # or any other auth backend
+    ]
+
+``PermissionsBackend`` routes ``has_perm()`` calls to the role callback
+injected by ``RoleField``.  It also implements ``get_all_permissions()`` by
+iterating every permission in the database through the callback, which is
+what drives the Django admin's per-app sidebar visibility.
+
+``PermissionsBackend`` must come first for two reasons: it avoids an
+unnecessary database query when the role callback already has an answer, and
+it ensures that ``deny`` patterns cannot be bypassed by a database-level
+permission grant that would otherwise short-circuit the check.
+
+Configuration
+-------------
+
+Add ``AUTHLIB_ROLES`` to your settings. Each key is a role identifier; each
+value is a dict with at minimum a ``"title"`` (used as the human-readable
+choice label) and optionally a ``"callback"`` function:
+
+.. code-block:: python
+
+    from functools import partial
+    from django.utils.translation import gettext_lazy as _
+    from authlib.roles import allow_deny_globs
+
+    AUTHLIB_ROLES = {
+        "default": {
+            "title": _("Default"),
+            # No callback → no extra permissions beyond Django's own checks
+        },
+        "readonly": {
+            "title": _("Read-only"),
+            # Grant all view permissions, nothing else
+            "callback": partial(allow_deny_globs, allow={"*.view_*"}),
+        },
+        "editor": {
+            "title": _("Editor"),
+            # Grant everything except user/auth management
+            "callback": partial(
+                allow_deny_globs,
+                allow={"*"},
+                deny={"auth.*", "little_auth.*", "admin_sso.*"},
+            ),
+        },
+        "support": {
+            "title": _("Support"),
+            # Grant all permissions
+            "callback": partial(allow_deny_globs, allow={"*"}),
+        },
+    }
+
+The callback receives three keyword arguments: ``user``, ``perm``, and
+``obj``.  It should return ``True`` to grant the permission, raise
+``django.core.exceptions.PermissionDenied`` to explicitly deny it, or return
+a falsy value to let Django's normal permission checks continue.
+
+When only one role is defined the ``RoleField`` renders as a hidden input in
+forms, so you can add the field to existing models without cluttering the UI.
+
+``allow_deny_globs``
+--------------------
+
+``authlib.roles.allow_deny_globs`` is a ready-made callback that matches the
+permission string (``"app_label.codename"``) against two lists of
+``fnmatch``-style glob patterns:
+
+- ``deny`` – patterns checked first; a match raises ``PermissionDenied``.
+- ``allow`` – patterns checked second; a match grants the permission.
+
+Use ``functools.partial`` to bind the pattern lists, as shown above.
+
+Adding ``RoleField`` to a custom user model
+-------------------------------------------
+
+If you are not using *Little Auth*, add the field to your own user model:
+
+.. code-block:: python
+
+    from authlib.roles import RoleField
+
+    class MyUser(AbstractBaseUser, ...):
+        role = RoleField()
+
+Then run ``makemigrations``.  The field's ``deconstruct`` method omits the
+choices from the migration so that adding or renaming roles does not require
+a new migration.

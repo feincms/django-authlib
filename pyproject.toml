@@ -26,6 +26,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dynamic = [
   "version",
@@ -39,15 +40,12 @@ optional-dependencies.tests = [
 ]
 urls.Homepage = "http://github.com/matthiask/django-authlib/"
 
-[tool.hatch.build]
-include = [ "authlib/" ]
-
-[tool.hatch.version]
-path = "authlib/__init__.py"
+[tool.hatch]
+build.include = [ "authlib/" ]
+version.path = "authlib/__init__.py"
 
 [tool.ruff]
 target-version = "py39"
-
 fix = true
 show-fixes = true
 lint.extend-select = [

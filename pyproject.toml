@@ -41,8 +41,8 @@ optional-dependencies.tests = [
 urls.Homepage = "http://github.com/matthiask/django-authlib/"
 
 [tool.hatch]
-build.include = [ "authlib/" ]
 version.path = "authlib/__init__.py"
+build.include = [ "authlib/" ]
 
 [tool.ruff]
 target-version = "py39"

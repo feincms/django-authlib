@@ -6,13 +6,14 @@ from unittest.mock import patch
 from urllib.parse import parse_qsl, urlparse
 
 import requests_mock
-from django.test import Client, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.test.utils import isolate_apps, modify_settings
 from django.utils.translation import deactivate_all
 
 from authlib.base_user import BaseUser
 from authlib.facebook import FacebookOAuth2Client
 from authlib.little_auth.models import User
+from authlib.microsoft import MicrosoftOAuth2Client
 
 
 try:
@@ -210,6 +211,7 @@ class Test(TestCase):
             '<a href="/oauth/facebook/">Facebook</a>',
             '<a href="/oauth/google/">Google</a>',
             '<a href="/oauth/twitter/">Twitter</a>',
+            '<a href="/oauth/microsoft/">Microsoft</a>',
             '<a href="/email/">Magic link by Email</a>',
         ]:
             self.assertContains(response, snip)
@@ -305,3 +307,155 @@ class OAuth2Test(TestCase):
 
         response = client.get("/email/")
         self.assertEqual(response.status_code, 200)
+
+
+class MicrosoftOAuth2Test(TestCase):
+    def _create_request(self, path="/oauth/microsoft/"):
+        factory = RequestFactory()
+        return factory.get(path)
+
+    def test_microsoft_oauth2_initialization(self):
+        request = self._create_request("/fake-path/")
+        microsoft_client = MicrosoftOAuth2Client(request, login_hint="user@example.com")
+        self.assertEqual(
+            microsoft_client.authorization_base_url,
+            "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+        )
+        self.assertEqual(
+            microsoft_client.token_url,
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+        )
+        self.assertEqual(
+            microsoft_client.scope, ["https://graph.microsoft.com/User.Read"]
+        )
+        self.assertEqual(microsoft_client._login_hint, "user@example.com")
+
+    def test_microsoft_oauth2_authorization_url(self):
+        request = self._create_request("/oauth/microsoft/")
+        microsoft_client = MicrosoftOAuth2Client(request, login_hint="user@example.com")
+        url = microsoft_client.get_authentication_url()
+        self.assertIn("login.microsoftonline.com", url)
+        self.assertIn("login_hint=user%40example.com", url)
+        self.assertIsNotNone(microsoft_client._state)
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_get_user_data_success(self, m):
+        request = self._create_request("/oauth/microsoft/?code=test_code")
+        microsoft_client = MicrosoftOAuth2Client(request)
+
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"mail": "test@example.com", "displayName": "Test User"},
+        )
+
+        user_data = microsoft_client.get_user_data()
+        self.assertEqual(
+            user_data, {"email": "test@example.com", "full_name": "Test User"}
+        )
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_get_user_data_missing_email(self, m):
+        request = self._create_request("/oauth/microsoft/?code=test_code")
+        microsoft_client = MicrosoftOAuth2Client(request)
+
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"displayName": "Test User"},
+        )
+
+        user_data = microsoft_client.get_user_data()
+        self.assertEqual(user_data, {"email": None, "full_name": "Test User"})
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_get_user_data_missing_full_name(self, m):
+        request = self._create_request("/oauth/microsoft/?code=test_code")
+        microsoft_client = MicrosoftOAuth2Client(request)
+
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"mail": "test@example.com"},
+        )
+
+        user_data = microsoft_client.get_user_data()
+        self.assertEqual(user_data, {"email": "test@example.com", "full_name": None})
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_flow_integration(self, m):
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"mail": "microsoft@example.com", "displayName": "Microsoft User"},
+        )
+
+        client = Client()
+        response = client.get("/oauth/microsoft/?code=test_code")
+        self.assertRedirects(response, "/?login=1", fetch_redirect_response=False)
+        self.assertEqual(
+            User.objects.get(email="microsoft@example.com").email,
+            "microsoft@example.com",
+        )
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_flow_no_email(self, m):
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"displayName": "Microsoft User"},
+        )
+
+        client = Client()
+        response = client.get("/oauth/microsoft/?code=test_code")
+        self.assertRedirects(response, "/login/", fetch_redirect_response=False)
+        messages = [str(msg) for msg in response.wsgi_request._messages]
+        self.assertEqual(messages, ["Did not get an email address. Please try again."])
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_flow_inactive_user(self, m):
+        User.objects.create(email="inactive@example.com", is_active=False)
+
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token"},
+        )
+        m.get(
+            "https://graph.microsoft.com/v1.0/me",
+            json={"mail": "inactive@example.com", "displayName": "Inactive User"},
+        )
+
+        client = Client()
+        response = client.get("/oauth/microsoft/?code=test_code")
+        self.assertRedirects(response, "/login/", fetch_redirect_response=False)
+        messages = [str(msg) for msg in response.wsgi_request._messages]
+        self.assertEqual(
+            messages,
+            ["No active user with email address inactive@example.com found."],
+        )
+
+    def test_microsoft_oauth2_authorization_redirect(self):
+        client = Client()
+        response = client.get("/oauth/microsoft/")
+        self.assertEqual(response.status_code, 302)
+        url = urlparse(response["Location"])
+        params = dict(parse_qsl(url.query))
+        self.assertEqual(params["response_type"], "code")
+        self.assertEqual(params["redirect_uri"], "http://testserver/oauth/microsoft/")
+        self.assertIn("scope", params)

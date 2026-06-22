@@ -5,6 +5,7 @@ from django.urls import include, path, re_path
 from authlib import views
 from authlib.facebook import FacebookOAuth2Client
 from authlib.google import GoogleOAuth2Client
+from authlib.microsoft import MicrosoftOAuth2Client
 from authlib.twitter import TwitterOAuthClient
 from testapp.views import custom_verification, custom_verification_code
 
@@ -25,6 +26,12 @@ urlpatterns = [
         views.oauth2,
         {"client_class": GoogleOAuth2Client},
         name="accounts_oauth_google",
+    ),
+    path(
+        "oauth/microsoft/",
+        views.oauth2,
+        {"client_class": MicrosoftOAuth2Client},
+        name="accounts_oauth_microsoft",
     ),
     path(
         "oauth/twitter/",

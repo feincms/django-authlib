@@ -10,13 +10,14 @@
   <button type="submit">{% trans 'Submit' %}</button>
 </form>
 
-<div class="row">
-  <div class="small-12 columns">
-    <a href="{% url 'accounts_oauth_facebook' %}">Facebook</a>
-    <a href="{% url 'accounts_oauth_google' %}">Google</a>
-    <a href="{% url 'accounts_oauth_twitter' %}">Twitter</a>
-    <a href="{% url 'email_registration' %}">Magic link by Email</a>
-  </div>
-</div>
+ <div class="row">
+   <div class="small-12 columns">
+     <a href="{% url 'accounts_oauth_facebook' %}">Facebook</a>
+     <a href="{% url 'accounts_oauth_google' %}">Google</a>
+     <a href="{% url 'accounts_oauth_microsoft' %}">Microsoft</a>
+     <a href="{% url 'accounts_oauth_twitter' %}">Twitter</a>
+     <a href="{% url 'email_registration' %}">Magic link by Email</a>
+   </div>
+ </div>
 
 {% endblock %}

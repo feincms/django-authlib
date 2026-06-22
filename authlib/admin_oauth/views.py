@@ -24,14 +24,18 @@ ADMIN_OAUTH_PROMPT = "admin_oauth_prompt"
 
 @never_cache
 @set_next_cookie
-def admin_oauth(request):
+def admin_oauth(request, client_class=None):
+    if not client_class:
+        messages.error(request, _("No client provided."))
+        return redirect("admin:login")
+
     authorization_params = {
         "login_hint": request.COOKIES.get(ADMIN_OAUTH_LOGIN_HINT, ""),
         "prompt": "consent select_account"
         if request.session.pop(ADMIN_OAUTH_PROMPT, False)
         else "",
     }
-    client = GoogleOAuth2Client(request, authorization_params=authorization_params)
+    client = client_class(request, authorization_params=authorization_params)
 
     if all(key not in request.GET for key in ("code", "oauth_token")):
         return redirect(client.get_authentication_url())

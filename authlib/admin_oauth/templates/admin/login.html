@@ -15,10 +15,14 @@
   padding: .75rem 0 0 0;
   margin: .75rem 0 0 0;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
 }
 .admin-sso .button {
   padding: 10px 15px;
   display: inline-block;
+  margin: auto;
 }
 @media (max-width: 767px) {
   .admin-sso .button {
@@ -32,5 +36,6 @@
 {{ block.super }}
 <div class="admin-sso">
   <a class="button" href="{% url 'admin_oauth' %}?next={{ request.GET.next }}">{% trans "Log in using Google" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
+  <a class="button" href="{% url 'admin_oauth_microsoft' %}?next={{ request.GET.next }}">{% trans "Log in using Microsoft" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
 </div>
 {% endblock content %}

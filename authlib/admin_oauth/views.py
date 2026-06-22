@@ -8,7 +8,6 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 
-from authlib.google import GoogleOAuth2Client
 from authlib.views import retrieve_next, set_next_cookie
 
 

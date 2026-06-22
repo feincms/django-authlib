@@ -5,6 +5,11 @@ from requests_oauthlib import OAuth2Session
 
 
 class MicrosoftOAuth2Client:
+    """Microsoft OAuth2 client for django-authlib.
+
+    Requires OAUTHLIB_RELAX_TOKEN_SCOPE=1 to handle scope mismatches.
+    """
+
     authorization_base_url = (
         "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
     )
@@ -14,7 +19,7 @@ class MicrosoftOAuth2Client:
     client_secret = settings.MICROSOFT_CLIENT_SECRET
 
     def __init__(self, request, *, login_hint=None, authorization_params=None):
-        # let oauthlib be less strict on scope mismatch
+        # Relax scope validation for Microsoft OAuth2 (required for their flow)
         os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
         self._request = request
@@ -42,10 +47,6 @@ class MicrosoftOAuth2Client:
                 self._request.get_full_path()
             ),
         )
-        data = self._session.get(
-            "https://graph.microsoft.com/v1.0/me",
-        ).json()
-
-        print(data)
+        data = self._session.get("https://graph.microsoft.com/v1.0/me").json()
 
         return {"email": data.get("mail"), "full_name": data.get("displayName")}

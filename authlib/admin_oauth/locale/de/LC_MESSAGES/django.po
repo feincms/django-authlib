@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-02 12:01+0200\n"
+"POT-Creation-Date: 2026-06-24 03:02-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,23 +18,42 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin_oauth/templates/admin/login.html:34
+#: authlib/admin_oauth/templates/admin/login.html:38
 msgid "Log in using Google"
 msgstr "Mit Google anmelden"
 
-#: admin_oauth/templates/admin/login.html:34
+#: authlib/admin_oauth/templates/admin/login.html:38
+#: authlib/admin_oauth/templates/admin/login.html:39
 msgid "(select account)"
 msgstr "(Konto auswählen)"
 
-#: admin_oauth/views.py:42
+#: authlib/admin_oauth/templates/admin/login.html:39
+msgid "Log in using Microsoft"
+msgstr "Mit Microsoft anmelden"
+
+#: authlib/admin_oauth/views.py:28
+msgid "No client provided."
+msgstr "Kein Client konfiguriert."
+
+#: authlib/admin_oauth/views.py:46
 msgid "Error while fetching user data. Please try again."
 msgstr "Fehler während Abholen der Nutzerdaten. Bitte nochmals versuchen."
 
-#: admin_oauth/views.py:66
+#: authlib/admin_oauth/views.py:62
+#, python-brace-format
+msgid "Skipping {} because multiple users exist with this address."
+msgstr "{} wird übersprungen, da mehrere Benutzer mit dieser Adresse existieren."
+
+#: authlib/admin_oauth/views.py:72
+#, python-brace-format
+msgid "Welcome, {}!"
+msgstr "Willkommen {}!"
+
+#: authlib/admin_oauth/views.py:80
 #, python-format
 msgid "No matching staff users for email address '%s'"
 msgstr "Kein passendes Mitarbeiter-Konto für E-Mail-Adresse '%s' gefunden."
 
-#: admin_oauth/views.py:70
+#: authlib/admin_oauth/views.py:84
 msgid "Could not determine your email address."
 msgstr "Konnte E-Mail-Adresse nicht bestimmen."

@@ -1,6 +1,10 @@
+import base64
+import json
 import os
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from requests_oauthlib import OAuth2Session
 
 
@@ -14,7 +18,7 @@ class MicrosoftOAuth2Client:
         "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
     )
     token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-    scope = ["https://graph.microsoft.com/User.Read"]
+    scope = ["openid", "profile", "email"]
     client_id = settings.MICROSOFT_CLIENT_ID
     client_secret = settings.MICROSOFT_CLIENT_SECRET
 
@@ -39,6 +43,23 @@ class MicrosoftOAuth2Client:
 
         return authorization_url
 
+    def _parse_id_token(self, id_token):
+        try:
+            payload = id_token.split(".")[1]
+            payload += "=" * (4 - len(payload) % 4)
+            return json.loads(base64.urlsafe_b64decode(payload))
+        except (IndexError, ValueError):
+            return {}
+
+    def _is_valid_email(self, value):
+        if not value:
+            return False
+        try:
+            validate_email(value)
+            return True
+        except ValidationError:
+            return False
+
     def get_user_data(self):
         self._session.fetch_token(
             self.token_url,
@@ -47,6 +68,17 @@ class MicrosoftOAuth2Client:
                 self._request.get_full_path()
             ),
         )
-        data = self._session.get("https://graph.microsoft.com/v1.0/me").json()
+        token = self._session.token
+        id_token = token.get("id_token")
+        claims = self._parse_id_token(id_token) if id_token else {}
 
-        return {"email": data.get("mail"), "full_name": data.get("displayName")}
+        preferred_username = claims.get("preferred_username")
+        email = claims.get("email")
+        user_email = (
+            preferred_username if self._is_valid_email(preferred_username) else email
+        )
+
+        return {
+            "email": user_email,
+            "full_name": claims.get("name"),
+        }

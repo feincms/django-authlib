@@ -314,6 +314,13 @@ class MicrosoftOAuth2Test(TestCase):
         factory = RequestFactory()
         return factory.get(path)
 
+    def _create_id_token(self, email, name):
+        payload = {"preferred_username": email, "name": name, "email": email}
+        encoded_payload = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        )
+        return f"header.{encoded_payload}.signature"
+
     def test_microsoft_oauth2_initialization(self):
         request = self._create_request("/fake-path/")
         microsoft_client = MicrosoftOAuth2Client(request, login_hint="user@example.com")
@@ -325,9 +332,7 @@ class MicrosoftOAuth2Test(TestCase):
             microsoft_client.token_url,
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
         )
-        self.assertEqual(
-            microsoft_client.scope, ["https://graph.microsoft.com/User.Read"]
-        )
+        self.assertEqual(microsoft_client.scope, ["openid", "profile", "email"])
         self.assertEqual(microsoft_client._login_hint, "user@example.com")
 
     def test_microsoft_oauth2_authorization_url(self):
@@ -343,14 +348,10 @@ class MicrosoftOAuth2Test(TestCase):
         request = self._create_request("/oauth/microsoft/?code=test_code")
         microsoft_client = MicrosoftOAuth2Client(request)
 
+        id_token = self._create_id_token("test@example.com", "Test User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"mail": "test@example.com", "displayName": "Test User"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         user_data = microsoft_client.get_user_data()
@@ -363,13 +364,10 @@ class MicrosoftOAuth2Test(TestCase):
         request = self._create_request("/oauth/microsoft/?code=test_code")
         microsoft_client = MicrosoftOAuth2Client(request)
 
+        id_token = self._create_id_token(None, "Test User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"displayName": "Test User"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         user_data = microsoft_client.get_user_data()
@@ -380,13 +378,10 @@ class MicrosoftOAuth2Test(TestCase):
         request = self._create_request("/oauth/microsoft/?code=test_code")
         microsoft_client = MicrosoftOAuth2Client(request)
 
+        id_token = self._create_id_token("test@example.com", None)
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"mail": "test@example.com"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         user_data = microsoft_client.get_user_data()
@@ -394,13 +389,10 @@ class MicrosoftOAuth2Test(TestCase):
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_flow_integration(self, m):
+        id_token = self._create_id_token("microsoft@example.com", "Microsoft User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"mail": "microsoft@example.com", "displayName": "Microsoft User"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         client = Client()
@@ -413,13 +405,10 @@ class MicrosoftOAuth2Test(TestCase):
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_flow_no_email(self, m):
+        id_token = self._create_id_token(None, "Microsoft User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"displayName": "Microsoft User"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         client = Client()
@@ -432,13 +421,10 @@ class MicrosoftOAuth2Test(TestCase):
     def test_microsoft_oauth2_flow_inactive_user(self, m):
         User.objects.create(email="inactive@example.com", is_active=False)
 
+        id_token = self._create_id_token("inactive@example.com", "Inactive User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            json={"access_token": "mock_token"},
-        )
-        m.get(
-            "https://graph.microsoft.com/v1.0/me",
-            json={"mail": "inactive@example.com", "displayName": "Inactive User"},
+            json={"access_token": "mock_token", "id_token": id_token},
         )
 
         client = Client()
@@ -459,3 +445,18 @@ class MicrosoftOAuth2Test(TestCase):
         self.assertEqual(params["response_type"], "code")
         self.assertEqual(params["redirect_uri"], "http://testserver/oauth/microsoft/")
         self.assertIn("scope", params)
+
+    def test_parse_id_token_exceptions(self):
+        request = self._create_request()
+        client = MicrosoftOAuth2Client(request)
+        self.assertEqual(client._parse_id_token("invalid"), {})
+        self.assertEqual(client._parse_id_token(""), {})
+        self.assertEqual(client._parse_id_token("a.b"), {})
+
+    def test_is_valid_email_exceptions(self):
+        request = self._create_request()
+        client = MicrosoftOAuth2Client(request)
+        self.assertFalse(client._is_valid_email("invalid"))
+        self.assertFalse(client._is_valid_email(""))
+        self.assertFalse(client._is_valid_email(None))
+        self.assertFalse(client._is_valid_email("not-an-email"))

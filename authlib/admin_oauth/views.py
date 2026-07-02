@@ -37,7 +37,7 @@ def admin_oauth(request, client_class=None):
 
     authorization_params = {
         "login_hint": request.COOKIES.get(ADMIN_OAUTH_LOGIN_HINT, ""),
-        "prompt": "consent select_account"
+        "prompt": client_class.prompt
         if request.session.pop(ADMIN_OAUTH_PROMPT, False)
         else "",
     }

@@ -21,6 +21,7 @@ class MicrosoftOAuth2Client:
     scope = ["openid", "profile", "email"]
     client_id = getattr(settings, "MICROSOFT_CLIENT_ID", None)
     client_secret = getattr(settings, "MICROSOFT_CLIENT_SECRET", None)
+    prompt = "select_account"
 
     def __init__(self, request, *, login_hint=None, authorization_params=None):
         # Relax scope validation for Microsoft OAuth2 (required for their flow)

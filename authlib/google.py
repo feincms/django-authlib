@@ -24,6 +24,7 @@ class GoogleOAuth2Client:
     scope = ["openid", "email", "profile"]
     client_id = getattr(settings, "GOOGLE_CLIENT_ID", None)
     client_secret = getattr(settings, "GOOGLE_CLIENT_SECRET", None)
+    prompt = "consent select_account"
 
     def __init__(self, request, *, login_hint=None, authorization_params=None):
         # let oauthlib be less strict on scope mismatch

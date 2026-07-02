@@ -103,6 +103,13 @@ def oauth2(
     post_login_response=post_login_response,
     email_login=email_login,
 ):
+    # Check if client has valid credentials
+    if not getattr(client_class, "client_id", None) or not getattr(
+        client_class, "client_secret", None
+    ):
+        messages.error(request, _("OAuth client not properly configured."))
+        return redirect("login")
+
     client = client_class(request)
 
     if all(key not in request.GET for key in ("code", "oauth_token")):

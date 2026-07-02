@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-17 18:26+0200\n"
+"POT-Creation-Date: 2026-06-24 03:02-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,60 +17,64 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: base_user.py:29 views.py:127
+#: authlib/base_user.py:29 authlib/views.py:135
 msgid "email"
 msgstr "E-Mail"
 
-#: base_user.py:30
+#: authlib/base_user.py:30
 msgid "is active"
 msgstr "ist aktiv"
 
-#: base_user.py:31
+#: authlib/base_user.py:32
 msgid "is staff"
 msgstr "ist Mitarbeiter"
 
-#: base_user.py:32
+#: authlib/base_user.py:34
+msgid "Designates whether the user can log into this admin site."
+msgstr "Legt fest, ob sich der Benutzer auf dieser Admin-Seite einloggen kann."
+
+#: authlib/base_user.py:36
 msgid "date joined"
 msgstr "Konto seit"
 
-#: base_user.py:38
+#: authlib/base_user.py:42
 msgid "user"
 msgstr "Nutzer"
 
-#: base_user.py:39
+#: authlib/base_user.py:43
 msgid "users"
 msgstr "Nutzer"
 
-#: email.py:139
+#: authlib/email.py:139
 msgid "The link is expired. Please request another registration link."
 msgstr "Der Link ist abgelaufen. Bitte einen neuen Link anfordern."
 
-#: email.py:146
+#: authlib/email.py:146
 msgid "Unable to verify the signature. Please request a new registration link."
 msgstr "Konnte Signatur nicht verifizieren. Bitte einen neuen Link anfordern."
 
-#: roles.py:19
+#: authlib/roles.py:18
 msgid "default"
 msgstr "standard"
 
-#: roles.py:35
+#: authlib/roles.py:34
 msgid "role"
 msgstr "Rolle"
 
-#: views.py:107
+#: authlib/views.py:115
 msgid "Error while fetching user data. Please try again."
 msgstr "Fehler während Abholen der Nutzerdaten. Bitte nochmals versuchen."
 
-#: views.py:117 views.py:188
+#: authlib/views.py:125 authlib/views.py:197
 #, python-format
 msgid "No active user with email address %s found."
 msgstr "Keine Nutzer mit E-Mail-Adresse %s gefunden."
 
-#: views.py:121
+#: authlib/views.py:129
 msgid "Did not get an email address. Please try again."
 msgstr "Konnte E-Mail-Adresse nicht abholen. Bitte nochmals versuchen."
 
-#: views.py:143
+#: authlib/views.py:151
 #, python-format
 msgid ""
 "The email you entered (%(input)s) does not match the email of the account "
@@ -79,7 +83,7 @@ msgstr ""
 "Die E-Mail-Adresse (%(input)s) stimmt nicht mit der E-Mail-Adresse des "
 "Profils überein, mit dem du angemeldet bist (%(current)s)."
 
-#: views.py:173
+#: authlib/views.py:182
 msgid "Please check your mailbox."
 msgstr "Bitte prüfe deine Mailbox."
 

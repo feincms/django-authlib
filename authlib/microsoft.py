@@ -19,8 +19,8 @@ class MicrosoftOAuth2Client:
     )
     token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
     scope = ["openid", "profile", "email"]
-    client_id = settings.MICROSOFT_CLIENT_ID
-    client_secret = settings.MICROSOFT_CLIENT_SECRET
+    client_id = getattr(settings, "MICROSOFT_CLIENT_ID", None)
+    client_secret = getattr(settings, "MICROSOFT_CLIENT_SECRET", None)
 
     def __init__(self, request, *, login_hint=None, authorization_params=None):
         # Relax scope validation for Microsoft OAuth2 (required for their flow)

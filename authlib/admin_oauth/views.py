@@ -28,6 +28,13 @@ def admin_oauth(request, client_class=None):
         messages.error(request, _("No client provided."))
         return redirect("admin:login")
 
+    # Check if client has valid credentials
+    if not getattr(client_class, "client_id", None) or not getattr(
+        client_class, "client_secret", None
+    ):
+        messages.error(request, _("OAuth client not properly configured."))
+        return redirect("admin:login")
+
     authorization_params = {
         "login_hint": request.COOKIES.get(ADMIN_OAUTH_LOGIN_HINT, ""),
         "prompt": "consent select_account"

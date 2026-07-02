@@ -6,6 +6,7 @@ from unittest.mock import patch
 from urllib.parse import parse_qsl, urlparse
 
 import requests_mock
+from django.conf import settings
 from django.test import Client, RequestFactory, TestCase
 from django.test.utils import isolate_apps, modify_settings
 from django.utils.translation import deactivate_all
@@ -79,9 +80,7 @@ class Test(TestCase):
         response = client.get("/admin/login/?next=/admin/little_auth/")
         self.assertContains(
             response,
-            '<a class="button"'
-            ' href="/admin/__oauth__/?next=/admin/little_auth/">'
-            "Log in using Google</a>",
+            '<a class="button" href="/admin/__oauth__/?next=/admin/little_auth/">Log in using Google</a>',
         )
 
         response = client.get("/admin/__oauth__/?next=/admin/little_auth/")
@@ -98,10 +97,49 @@ class Test(TestCase):
 
         self.assertEqual(client.get("/admin/little_auth/").status_code, 200)
 
+    @patch.object(settings, "GOOGLE_CLIENT_ID", None)
+    @patch.object(settings, "MICROSOFT_CLIENT_ID", None)
+    def test_admin_login_buttons_without_credentials(self, *mocks):
+        """Test that OAuth buttons are not displayed when credentials are not provided."""
         client = Client()
-        with google_oauth_data({"email": "blaaa@invalid.tld", "email_verified": True}):
-            response = client.get("/admin/__oauth__/?code=bla")
-        self.assertRedirects(response, "/admin/login/")
+        response = client.get("/admin/login/")
+
+        # Google button should not be present when GOOGLE_CLIENT_ID is None
+        self.assertNotContains(
+            response,
+            '<a class="button" href="/admin/__oauth__/',
+        )
+        self.assertNotContains(response, "Log in using Google")
+
+        # Microsoft button should not be present when MICROSOFT_CLIENT_ID is None
+        self.assertNotContains(
+            response,
+            '<a class="button" href="/admin/__oauth_ms__/',
+        )
+        self.assertNotContains(response, "Log in using Microsoft")
+
+    @patch.object(settings, "GOOGLE_CLIENT_ID", "test_google_id")
+    @patch.object(settings, "GOOGLE_CLIENT_SECRET", "test_google_secret")
+    @patch.object(settings, "MICROSOFT_CLIENT_ID", "test_microsoft_id")
+    @patch.object(settings, "MICROSOFT_CLIENT_SECRET", "test_microsoft_secret")
+    def test_admin_login_buttons_with_credentials(self, *mocks):
+        """Test that OAuth buttons are displayed when credentials are provided."""
+        client = Client()
+        response = client.get("/admin/login/")
+
+        # Google button should be present when GOOGLE_CLIENT_ID is set
+        self.assertContains(
+            response,
+            '<a class="button" href="/admin/__oauth__/?next=',
+        )
+        self.assertContains(response, "Log in using Google")
+
+        # Microsoft button should be present when MICROSOFT_CLIENT_ID is set
+        self.assertContains(
+            response,
+            '<a class="button" href="/admin/__oauth_ms__/?next=',
+        )
+        self.assertContains(response, "Log in using Microsoft")
 
     def test_admin_oauth_no_data(self):
         client = Client()

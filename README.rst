@@ -43,11 +43,13 @@ Usage
   feedback using ``django.contrib.messages``, so you may want to check
   that those messages are visible to the user.
 
-The Google, Facebook and Twitter OAuth clients require the following
+The Google, Microsoft, Facebook and Twitter OAuth clients require the following
 settings:
 
 - ``GOOGLE_CLIENT_ID``
 - ``GOOGLE_CLIENT_SECRET``
+- ``MICROSOFT_CLIENT_ID``
+- ``MICROSOFT_CLIENT_SECRET``
 - ``FACEBOOK_CLIENT_ID``
 - ``FACEBOOK_CLIENT_SECRET``
 - ``TWITTER_CLIENT_ID``
@@ -84,6 +86,7 @@ writing ``django-authlib``'s Python code is less than 500 lines):
     from authlib import views
     from authlib.facebook import FacebookOAuth2Client
     from authlib.google import GoogleOAuth2Client
+    from authlib.microsoft import MicrosoftOAuth2Client
     from authlib.twitter import TwitterOAuthClient
 
     urlpatterns = [
@@ -107,6 +110,14 @@ writing ``django-authlib``'s Python code is less than 500 lines):
                 "client_class": GoogleOAuth2Client,
             },
             name="accounts_oauth_google",
+        ),
+        url(
+            r"^oauth/microsoft/$",
+            views.oauth2,
+            {
+                "client_class": MicrosoftOAuth2Client,
+            },
+            name="accounts_oauth_microsoft",
         ),
         url(
             r"^oauth/twitter/$",
@@ -137,7 +148,7 @@ writing ``django-authlib``'s Python code is less than 500 lines):
 Admin OAuth2
 ============
 
-The ``authlib.admin_oauth`` app allows using Google OAuth2 to allow all
+The ``authlib.admin_oauth`` app allows using Google or Microsoft OAuth2 to allow all
 users with the same email domain to authenticate for Django's
 administration interface. You have to use authlib's authentication
 backend (``EmailBackend``) for this.

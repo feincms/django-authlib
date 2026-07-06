@@ -5,11 +5,16 @@ Change log
 Next version
 ============
 
+
+0.18 (2026-07-02)
+=================
+
 - Added two missing methods to the ``PermissionsBackend`` so that the admin app
   list works correctly.
 - Added verification of the ``next`` cookie value also when setting the cookie,
   not just when reading it.
 - Added Python 3.13, Django 5.2a1.
+- Added Microsoft OAuth as backend and ``admin_oauth`` option.
 
 
 0.17 (2024-08-19)

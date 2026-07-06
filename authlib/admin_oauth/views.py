@@ -8,7 +8,6 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 
-from authlib.google import GoogleOAuth2Client
 from authlib.views import retrieve_next, set_next_cookie
 
 
@@ -24,14 +23,25 @@ ADMIN_OAUTH_PROMPT = "admin_oauth_prompt"
 
 @never_cache
 @set_next_cookie
-def admin_oauth(request):
+def admin_oauth(request, client_class=None):
+    if not client_class:
+        messages.error(request, _("No client provided."))
+        return redirect("admin:login")
+
+    # Check if client has valid credentials
+    if not getattr(client_class, "client_id", None) or not getattr(
+        client_class, "client_secret", None
+    ):
+        messages.error(request, _("OAuth client not properly configured."))
+        return redirect("admin:login")
+
     authorization_params = {
         "login_hint": request.COOKIES.get(ADMIN_OAUTH_LOGIN_HINT, ""),
-        "prompt": "consent select_account"
+        "prompt": client_class.prompt
         if request.session.pop(ADMIN_OAUTH_PROMPT, False)
         else "",
     }
-    client = GoogleOAuth2Client(request, authorization_params=authorization_params)
+    client = client_class(request, authorization_params=authorization_params)
 
     if all(key not in request.GET for key in ("code", "oauth_token")):
         return redirect(client.get_authentication_url())

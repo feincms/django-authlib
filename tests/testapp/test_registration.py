@@ -33,7 +33,7 @@ class RegistrationTest(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         body = mail.outbox[0].body
-        url = unquote([line for line in body.splitlines() if "testserver" in line][0])
+        url = unquote(next(line for line in body.splitlines() if "testserver" in line))
 
         self.assertTrue("http://testserver/email/dGVzdEBleGFtcGxlLmNvbTo:" in url)
 
@@ -66,7 +66,7 @@ class RegistrationTest(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         body = mail.outbox[0].body
-        url = unquote([line for line in body.splitlines() if "testserver" in line][0])
+        url = unquote(next(line for line in body.splitlines() if "testserver" in line))
 
         self.assertTrue(
             re.match(r"http://testserver/email/dGVzdEBleGFtcGxlLmNvbTo:", url)
@@ -104,7 +104,7 @@ class RegistrationTest(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         body = mail.outbox[0].body
-        url = unquote([line for line in body.splitlines() if "testserver" in line][0])
+        url = unquote(next(line for line in body.splitlines() if "testserver" in line))
 
         response = self.client.get(url)
         self.assertEqual(

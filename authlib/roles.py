@@ -45,7 +45,7 @@ class RoleField(models.CharField):
         cls._role_has_perm = _role_has_perm
 
     def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
+        name, _path, args, kwargs = super().deconstruct()
         kwargs["choices"] = [("", "")]
         return name, "django.db.models.CharField", args, kwargs
 

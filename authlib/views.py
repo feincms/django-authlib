@@ -192,7 +192,7 @@ def email_registration(
 
     else:
         try:
-            email, payload = decode(code, max_age=max_age)
+            email, _payload = decode(code, max_age=max_age)
         except ValidationError as exc:
             [messages.error(request, msg) for msg in exc.messages]
             return redirect("../")

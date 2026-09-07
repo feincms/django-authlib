@@ -29,10 +29,16 @@ def _all_perms():
 
 class PermissionsBackend(ModelBackend):
     def get_user_permissions(self, user, obj=None):
+        # ModelBackend can use an optimized variant of this -- we cannot since
+        # we don't know what the permission checking callbacks do.
+        if obj is not None:
+            # Permissions may depend on the object, so never cache those --
+            # caching on the user instance would leak results across
+            # unrelated objects (and even across obj=None lookups).
+            return {perm for perm in _all_perms() if self._has_perm(user, perm, obj)}
+
         attribute = "_user_permissions_cache"
         if not hasattr(user, attribute):
-            # ModelBackend can use an optimized variant of this -- we cannot since
-            # we don't know what the permission checking callbacks do.
             perms = {perm for perm in _all_perms() if self._has_perm(user, perm, obj)}
             setattr(user, attribute, perms)
         return getattr(user, attribute)

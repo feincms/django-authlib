@@ -29,6 +29,7 @@ Next version
   pending authorization is now rejected. This means the two steps of the
   OAuth2 dance (redirect to the provider, then the callback) must now
   happen within the same session, as they always do for real browsers.
+- Added Django 6.1.
 
 
 0.18 (2026-07-02)
@@ -38,7 +39,7 @@ Next version
   list works correctly.
 - Added verification of the ``next`` cookie value also when setting the cookie,
   not just when reading it.
-- Added Python 3.13, Django 5.2a1.
+- Added Python 3.13, Django 5.2.
 - Added Microsoft OAuth as backend and ``admin_oauth`` option.
 
 

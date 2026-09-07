@@ -197,6 +197,16 @@ course) fails:
         (r"^.*@example\.org$", lambda match: match[0]),
     ]
 
+Note the ``^.*`` in the pattern above: the callable is passed the match, not
+the email address, so ``match[0]`` is only the part of the address which the
+pattern matched. ``(r"@example\.org$", lambda match: match[0])`` returns
+``"@example.org"`` and therefore never authenticates anyone. Use
+``match.string`` if you'd rather not anchor the pattern. A system check
+(``authlib.E004``) runs the callables in ``ADMIN_OAUTH_PATTERNS`` against an
+example address generated from their pattern and complains if what comes back
+isn't an email address, so this class of mistake fails ``manage.py check``
+instead of only failing logins.
+
 If a pattern succeeds but no matching user with staff access is found
 processing continues with the next pattern. This means that you can
 authenticate users with their individual accounts (if they have one) and

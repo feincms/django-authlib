@@ -48,10 +48,36 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 - `authlib/admin_oauth/` — separate SSO flow for the Django admin login page,
   with regex-pattern-based email→admin-username mapping
   (`ADMIN_OAUTH_PATTERNS`) and optional auto-provisioning
-  (`ADMIN_OAUTH_CREATE_USER_CALLBACK`).
+  (`ADMIN_OAUTH_CREATE_USER_CALLBACK`). `checks.py` holds the system checks
+  for that setting (registered from `apps.py`'s `ready()`; the app label
+  stays `admin_oauth`), including a tiny example-string generator over the
+  parsed regex.
 
 ## Known nuances / open items (as of 2026-09-07)
 
+- **`ADMIN_OAUTH_PATTERNS` callables receive the match, not the address**, so
+  `match[0]` is only the *matched part* of the address. The natural-looking
+  `(r"@example\.com$", lambda match: match[0])` therefore resolves to
+  `"@example.com"` and can never authenticate anyone — silently, because the
+  visitor just gets "No matching staff users for email address ..." naming
+  *their* address, which looks perfectly fine. Seen in the wild on
+  bernergesundheit.ch (2026-09-07): SSO was dead for a whole domain and
+  everyone quietly kept using passwords. `checks.py` cannot reason about a
+  callable, so it *runs* it: generate an example address from the pattern's
+  own parse tree (`re._parser`, falling back to `sre_parse` before 3.11),
+  pass the match in, and validate what comes back (`authlib.E004`). The
+  generator is only a probe factory and is self-verifying — a candidate must
+  be a valid email address *and* actually match the pattern before it's used,
+  and unsupported nodes (lookarounds, backreferences, ...) raise
+  `_UnsupportedError` so the pattern is skipped silently. Failure mode is
+  "says nothing", never a false alarm; keep it that way if you extend it, and
+  don't grow it into a general regex inverter. Callables which raise or
+  return `None` for the probe are only warnings (`authlib.W001`/`W002`) — a
+  probe address is not representative for a callable doing per-user dict
+  lookups. Note the check reads `settings.ADMIN_OAUTH_PATTERNS` while the
+  view keeps a module-level snapshot from import time, so the existing tests
+  patching `views.ADMIN_OAUTH_PATTERNS` are invisible to it (intentional — a
+  deployment gets checked on the setting).
 - **OAuth2 `state` (CSRF) is now validated** for Google/Microsoft/Facebook
   logins (Twitter/OAuth1 was already fine — it independently binds
   `oauth_token` to the Django session server-side). Previously each request

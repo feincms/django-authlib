@@ -5,6 +5,14 @@ Change log
 Next version
 ============
 
+- Added system checks for the ``ADMIN_OAUTH_PATTERNS`` setting. Callables are
+  passed the match, not the email address, which makes
+  ``(r"@example\.com$", lambda match: match[0])`` a silent trap: the callable
+  returns ``"@example.com"`` and no user can ever match. The checks verify
+  patterns and addresses, and additionally *run* callables against an example
+  address generated from their own pattern, complaining if the result isn't an
+  email address (``authlib.E004``). Patterns we cannot generate an example for
+  (lookarounds, backreferences, ...) are skipped without complaining.
 - Fixed a stale permission cache in ``PermissionsBackend`` -- results for
   object-level permission checks (``has_perm(..., obj=...)``) could leak
   across unrelated objects because the cache key didn't take ``obj`` into

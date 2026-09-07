@@ -1,12 +1,22 @@
 from functools import partial
+from unittest import skipUnless
 
-from django.contrib.auth import aauthenticate, authenticate
+from django.contrib.auth import authenticate
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.translation import deactivate_all, gettext_lazy as _
 
 from authlib.little_auth.models import User
 from authlib.roles import allow_deny_globs
+
+
+try:
+    from django.contrib.auth import aauthenticate
+
+    has_async_authenticate = True
+except ImportError:
+    # Django < 5.0
+    has_async_authenticate = False
 
 
 @override_settings(
@@ -100,6 +110,7 @@ class RolePermissionsBackendTest(TestCase):
             authenticate(username="admin@example.com", password="hunter2")
         )
 
+    @skipUnless(has_async_authenticate, "Django 5.0 or better")
     @override_settings(
         AUTHENTICATION_BACKENDS=["authlib.backends.RolePermissionsBackend"]
     )

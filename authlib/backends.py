@@ -34,6 +34,16 @@ class RolePermissionsBackend(BaseBackend):
     nobody; it has to be accompanied by one which does.
     """
 
+    def get_user(self, user_id):
+        # Authenticating nobody doesn't get us out of implementing this:
+        # Django's test client picks the first backend which *has* a
+        # get_user() for force_login(), and ``BaseBackend`` returns None
+        # there -- which would log those sessions straight back out.
+        try:
+            return get_user_model()._default_manager.get(pk=user_id, is_active=True)
+        except ObjectDoesNotExist:
+            return None
+
     def get_user_permissions(self, user, obj=None):
         # ModelBackend can use an optimized variant of this -- we cannot since
         # we don't know what the permission checking callbacks do.

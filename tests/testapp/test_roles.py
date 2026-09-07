@@ -1,8 +1,8 @@
 from functools import partial
 from unittest import skipUnless
 
-from django.contrib.auth import authenticate
-from django.test import TestCase
+from django.contrib.auth import BACKEND_SESSION_KEY, authenticate
+from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.utils.translation import deactivate_all, gettext_lazy as _
 
@@ -119,6 +119,23 @@ class RolePermissionsBackendTest(TestCase):
         self.assertIsNone(
             await aauthenticate(username="admin@example.com", password="hunter2")
         )
+
+    @override_settings(
+        AUTHENTICATION_BACKENDS=[
+            "authlib.backends.RolePermissionsBackend",
+            "authlib.backends.EmailBackend",
+        ]
+    )
+    def test_sessions_survive_force_login(self):
+        """``force_login()`` picks the first backend which has a get_user()."""
+        client = Client()
+        client.force_login(self.user)
+
+        self.assertEqual(
+            client.session[BACKEND_SESSION_KEY],
+            "authlib.backends.RolePermissionsBackend",
+        )
+        self.assertEqual(client.get("/admin/").status_code, 200)
 
     @override_settings(
         AUTHENTICATION_BACKENDS=[

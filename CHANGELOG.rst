@@ -5,6 +5,11 @@ Change log
 Next version
 ============
 
+- Fixed ``RolePermissionsBackend`` not being able to load users for a
+  session (0.19a2 only): Django's test client picks the first backend which
+  has a ``get_user()`` for ``force_login()``, and ``BaseBackend`` returns
+  ``None`` there, so the request following a ``force_login()`` was anonymous
+  again.
 - **Backwards incompatible:** Renamed ``PermissionsBackend`` to
   ``RolePermissionsBackend``, and it doesn't authenticate anyone anymore. It
   extended ``ModelBackend``, and since it is documented as coming first,

@@ -17,6 +17,11 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 - Pre-commit hooks (ruff, ruff-format, django-upgrade, biome, etc.) run on
   commit; don't bypass them with `--no-verify`.
 - Install for local dev: `pip install -e ".[tests]"`.
+- Commit feature by feature: one self-contained change per commit,
+  together with its tests and its documentation (`CHANGELOG.rst`, `README.rst`,
+  this file). Don't lump unrelated changes together.
+- Commit messages carry no attribution: no `Co-Authored-By` trailers, no
+  "generated with" footers.
 
 ## Layout
 

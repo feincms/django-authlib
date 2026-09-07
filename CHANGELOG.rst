@@ -13,6 +13,11 @@ Next version
   address generated from their own pattern, complaining if the result isn't an
   email address (``authlib.E004``). Patterns we cannot generate an example for
   (lookarounds, backreferences, ...) are skipped without complaining.
+- Added a warning to the ``authlib.admin_oauth`` logger when no active staff
+  user is found, including the addresses the patterns produced. The message
+  shown to the visitor keeps mentioning their own address only -- the resolved
+  addresses would tell anyone with an account at the OAuth provider how
+  ``ADMIN_OAUTH_PATTERNS`` is configured.
 - Fixed a stale permission cache in ``PermissionsBackend`` -- results for
   object-level permission checks (``has_perm(..., obj=...)``) could leak
   across unrelated objects because the cache key didn't take ``obj`` into

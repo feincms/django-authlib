@@ -1,3 +1,4 @@
+import logging
 import re
 
 from django.conf import settings
@@ -10,6 +11,8 @@ from django.views.decorators.cache import never_cache
 
 from authlib.views import retrieve_next, set_next_cookie
 
+
+logger = logging.getLogger("authlib.admin_oauth")
 
 ADMIN_OAUTH_PATTERNS = settings.ADMIN_OAUTH_PATTERNS
 ADMIN_OAUTH_LOGIN_HINT = "admin-oauth-login-hint"
@@ -55,11 +58,13 @@ def admin_oauth(request, client_class=None):
 
     email = user_data.get("email")
     if email:
+        tried = []
         for pattern, user_mail in ADMIN_OAUTH_PATTERNS:
             match = re.search(pattern, email)
             if match:
                 if callable(user_mail):
                     user_mail = user_mail(match)  # noqa: PLW2901
+                tried.append(user_mail)
                 try:
                     user = auth.authenticate(email=user_mail)
                 except MultipleObjectsReturned:
@@ -83,6 +88,17 @@ def admin_oauth(request, client_class=None):
                     )
                     return response
 
+        # The visitor only gets to know about their own address; the
+        # addresses our patterns produced are for the site's operators, since
+        # they would tell anyone with an OAuth account how ADMIN_OAUTH_PATTERNS
+        # is configured. They are the interesting part when debugging a failing
+        # login: a pattern which doesn't match the whole address makes
+        # match[0]-style callables return e.g. "@example.com".
+        logger.warning(
+            "No active staff user for %r (patterns produced %s)",
+            email,
+            ", ".join(map(repr, tried)) if tried else "no addresses",
+        )
         messages.error(
             request, _("No matching staff users for email address '%s'") % email
         )

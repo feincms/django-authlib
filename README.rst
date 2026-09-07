@@ -207,6 +207,11 @@ example address generated from their pattern and complains if what comes back
 isn't an email address, so this class of mistake fails ``manage.py check``
 instead of only failing logins.
 
+Failing logins are logged to the ``authlib.admin_oauth`` logger together with
+the addresses the patterns produced; the message shown in the browser only
+mentions the visitor's own address, since anyone with an account at the OAuth
+provider can reach the view.
+
 If a pattern succeeds but no matching user with staff access is found
 processing continues with the next pattern. This means that you can
 authenticate users with their individual accounts (if they have one) and

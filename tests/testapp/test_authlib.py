@@ -190,6 +190,65 @@ class Test(TestCase):
         )
 
     @patch(
+        "authlib.admin_oauth.views.ADMIN_OAUTH_PATTERNS",
+        # A pattern which doesn't cover the local part: the callable returns
+        # "@example.org", and no user can ever have that address.
+        new=[(r"@example\.org$", lambda match: match[0])],
+    )
+    def test_admin_oauth_nomatch_logs_resolved_addresses(self):
+        """
+        The visitor is only told about their own address (the patterns and the
+        addresses they produce are none of their business), the addresses which
+        were actually looked up go to the log.
+        """
+        client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
+        with (
+            google_oauth_data({"email": "bla@example.org", "email_verified": True}),
+            self.assertLogs("authlib.admin_oauth", level="WARNING") as logs,
+        ):
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
+
+        self.assertRedirects(response, "/admin/login/")
+
+        messages = [str(m) for m in response.wsgi_request._messages]
+        self.assertEqual(
+            messages, ["No matching staff users for email address 'bla@example.org'"]
+        )
+        self.assertEqual(
+            logs.output,
+            [
+                (
+                    "WARNING:authlib.admin_oauth:No active staff user for"
+                    " 'bla@example.org' (patterns produced '@example.org')"
+                )
+            ],
+        )
+
+    @patch(
+        "authlib.admin_oauth.views.ADMIN_OAUTH_PATTERNS",
+        new=[(r"@example\.com$", "admin@example.com")],
+    )
+    def test_admin_oauth_no_pattern_matches_at_all(self):
+        client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
+        with (
+            google_oauth_data({"email": "bla@example.org", "email_verified": True}),
+            self.assertLogs("authlib.admin_oauth", level="WARNING") as logs,
+        ):
+            client.get(f"/admin/__oauth__/?code=bla&state={state}")
+
+        self.assertEqual(
+            logs.output,
+            [
+                (
+                    "WARNING:authlib.admin_oauth:No active staff user for"
+                    " 'bla@example.org' (patterns produced no addresses)"
+                )
+            ],
+        )
+
+    @patch(
         "authlib.admin_oauth.views.ADMIN_OAUTH_CREATE_USER_CALLBACK",
         new="authlib.admin_oauth.views.create_superuser",
     )

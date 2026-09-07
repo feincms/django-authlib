@@ -62,22 +62,32 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   visitor just gets "No matching staff users for email address ..." naming
   *their* address, which looks perfectly fine. Seen in the wild on
   bernergesundheit.ch (2026-09-07): SSO was dead for a whole domain and
-  everyone quietly kept using passwords. `checks.py` cannot reason about a
-  callable, so it *runs* it: generate an example address from the pattern's
-  own parse tree (`re._parser`, falling back to `sre_parse` before 3.11),
-  pass the match in, and validate what comes back (`authlib.E004`). The
-  generator is only a probe factory and is self-verifying — a candidate must
-  be a valid email address *and* actually match the pattern before it's used,
-  and unsupported nodes (lookarounds, backreferences, ...) raise
-  `_UnsupportedError` so the pattern is skipped silently. Failure mode is
-  "says nothing", never a false alarm; keep it that way if you extend it, and
-  don't grow it into a general regex inverter. Callables which raise or
-  return `None` for the probe are only warnings (`authlib.W001`/`W002`) — a
-  probe address is not representative for a callable doing per-user dict
-  lookups. Note the check reads `settings.ADMIN_OAUTH_PATTERNS` while the
-  view keeps a module-level snapshot from import time, so the existing tests
-  patching `views.ADMIN_OAUTH_PATTERNS` are invisible to it (intentional — a
-  deployment gets checked on the setting).
+  everyone quietly kept using passwords. Two mitigations, both deliberately
+  shaped:
+  - `checks.py` cannot reason about a callable, so it *runs* it: generate an
+    example address from the pattern's own parse tree (`re._parser`, falling
+    back to `sre_parse` before 3.11), pass the match in, and validate what
+    comes back (`authlib.E004`). The generator is only a probe factory and is
+    self-verifying — a candidate must be a valid email address *and* actually
+    match the pattern before it's used, and unsupported nodes (lookarounds,
+    backreferences, ...) raise `_UnsupportedError` so the pattern is skipped
+    silently. Failure mode is "says nothing", never a false alarm; keep it
+    that way if you extend it, and don't grow it into a general regex
+    inverter. Callables which raise or return `None` for the probe are only
+    warnings (`authlib.W001`/`W002`) — a probe address is not representative
+    for a callable doing per-user dict lookups. Note the check reads
+    `settings.ADMIN_OAUTH_PATTERNS` while the view keeps a module-level
+    snapshot from import time, so the existing tests patching
+    `views.ADMIN_OAUTH_PATTERNS` are invisible to it (intentional — a
+    deployment gets checked on the setting).
+  - the view logs a warning to the `authlib.admin_oauth` logger listing
+    *every* address the patterns produced (`tried`), which is the piece that
+    actually explains a failed login. It deliberately does **not** go into the
+    `messages.error()` shown in the browser: anyone with an account at the
+    OAuth provider can reach that view, and the resolved addresses would leak
+    how `ADMIN_OAUTH_PATTERNS` is configured, internal alias accounts
+    included. Logging all of them also sidesteps the "which pattern do we
+    report?" question when several match.
 - **OAuth2 `state` (CSRF) is now validated** for Google/Microsoft/Facebook
   logins (Twitter/OAuth1 was already fine — it independently binds
   `oauth_token` to the Django session server-side). Previously each request

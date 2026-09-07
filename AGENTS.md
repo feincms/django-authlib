@@ -47,27 +47,45 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
 ## Known nuances / open items (as of 2026-09-07)
 
-- **OAuth2 `state` (CSRF) is currently not validated** for Google/Microsoft/
-  Facebook logins (Twitter/OAuth1 is fine — it binds `oauth_token` to the
-  Django session server-side). Root cause: each request instantiates a fresh
-  `OAuth2Session`, so the `state` generated in `get_authentication_url()` is
-  never persisted, and `requests_oauthlib`/`oauthlib` silently skip state
-  validation when `state=None` (`if state and params.get('state') != state`).
-  A real fix means persisting `state` in `request.session` across the
-  redirect and rejecting callbacks with no matching pending state — but a
-  lot of the existing OAuth tests call the callback URL directly without
-  first hitting the "start" URL (no session state ever gets set), and the
-  Microsoft unit tests build requests via bare `RequestFactory()` with no
-  session middleware at all. Fixing this properly means updating those
-  tests to do the real two-step redirect+callback dance. Not yet done —
-  needs a decision on how much of the test suite to touch.
+- **OAuth2 `state` (CSRF) is now validated** for Google/Microsoft/Facebook
+  logins (Twitter/OAuth1 was already fine — it independently binds
+  `oauth_token` to the Django session server-side). Previously each request
+  instantiated a fresh `OAuth2Session`, so the `state` generated in
+  `get_authentication_url()` was never persisted, and
+  `requests_oauthlib`/`oauthlib` silently skip state validation when
+  `state=None` (`if state and params.get('state') != state`) — meaning the
+  OAuth2 callback had no CSRF protection at all (an attacker could complete
+  their own OAuth dance and hand a victim's browser the resulting
+  `code`/`state`, logging the victim into the attacker's linked account).
+  Fixed by persisting `state` in `request.session` across the redirect and
+  rejecting callbacks with no matching pending state (raises `ValueError`
+  in `get_user_data()`, caught by the existing generic error handling in
+  `views.oauth2` / `admin_oauth.views.admin_oauth`). This means the two
+  legs of the OAuth2 dance (start redirect, then callback) must now happen
+  within the same session — true for every real browser, but the test
+  suite previously skipped the start leg in ~10 places and had to be
+  updated to do the real round-trip (see `start_oauth()` /
+  `_authorized_client()` helpers in `tests/testapp/test_authlib.py`).
 - **Magic links (`authlib/email.py`) are intentionally reusable until
-  expiry**, not single-use. `tests/testapp/test_registration.py::test_registration`
+  expiry**, not single-use — left that way on purpose, not just because it
+  was already tested. `tests/testapp/test_registration.py::test_registration`
   explicitly re-clicks the same link multiple times (including from a fresh
   `Client()`, simulating another device/session) and expects it to keep
-  working until the max_age (or until the user is deactivated). Don't "fix"
-  this into single-use without checking — it would break that test and may
-  be a deliberate multi-device design choice, not an oversight.
+  working until the max_age (or until the user is deactivated).
+  Considered making links single-use (cache-backed, consumed on first
+  successful login), but corporate email gateways and antivirus products
+  routinely GET-prefetch every link in an email before the recipient ever
+  opens it ("link preflighting" / Safe Links-style scanning) — naive
+  single-use would burn the link before the real user clicks it. The
+  correct fix (validate on GET, only consume on a subsequent POST/click)
+  would change the view's contract for every downstream project using
+  `authlib.views.email_registration` or hand-rolling their own view around
+  `authlib.email.decode()`, and since this library ships no default
+  templates, it'd also require every consumer to add a new confirmation
+  template. Decided to hold off rather than ship a partial/breaking fix;
+  document the tradeoff (reusable-until-expiry, replayable if the link
+  leaks within the expiry window) instead. If this gets revisited, the
+  GET-validates/POST-consumes split is the right shape.
 - `PermissionsBackend.get_user_permissions()` must never cache results when
   `obj is not None` — role callbacks can decide differently per object, so
   caching on the user instance without keying on `obj` leaks stale results

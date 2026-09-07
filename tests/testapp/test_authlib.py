@@ -7,6 +7,7 @@ from urllib.parse import parse_qsl, urlparse
 
 import requests_mock
 from django.conf import settings
+from django.contrib.sessions.backends.db import SessionStore
 from django.test import Client, RequestFactory, TestCase
 from django.test.utils import isolate_apps, modify_settings
 from django.utils.translation import deactivate_all
@@ -14,7 +15,7 @@ from django.utils.translation import deactivate_all
 from authlib.base_user import BaseUser
 from authlib.facebook import FacebookOAuth2Client
 from authlib.little_auth.models import User
-from authlib.microsoft import MicrosoftOAuth2Client
+from authlib.microsoft import MICROSOFT_OAUTH_STATE_SESSION_KEY, MicrosoftOAuth2Client
 
 
 try:
@@ -49,6 +50,17 @@ def google_oauth_authentication_url():
     with requests_mock.Mocker() as m:
         m.get("https://accounts.google.com/o/oauth2/v2/auth", {})
         yield
+
+
+def start_oauth(client, url):
+    """
+    Performs the "start" leg of an OAuth2 login (the redirect to the
+    provider) and returns the ``state`` value the provider would echo back
+    in the callback. Real browsers always do this round-trip; tests have to
+    simulate it explicitly now that ``state`` is actually validated.
+    """
+    response = client.get(url)
+    return dict(parse_qsl(urlparse(response["Location"]).query))["state"]
 
 
 class Test(TestCase):
@@ -90,9 +102,10 @@ class Test(TestCase):
             "&client_id=empty&redirect_uri=",
             response["Location"],
         )
+        state = dict(parse_qsl(urlparse(response["Location"]).query))["state"]
 
         with google_oauth_data({"email": "blaaa@example.com", "email_verified": True}):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
         self.assertRedirects(response, "/admin/little_auth/")
 
         self.assertEqual(client.get("/admin/little_auth/").status_code, 200)
@@ -143,8 +156,9 @@ class Test(TestCase):
 
     def test_admin_oauth_no_data(self):
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with google_oauth_data({}):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
 
         self.assertRedirects(response, "/admin/login/")
 
@@ -153,8 +167,9 @@ class Test(TestCase):
 
     def test_admin_oauth_match(self):
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with google_oauth_data({"email": "admin@example.com", "email_verified": True}):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
         self.assertRedirects(response, "/admin/")
 
         # We are authenticated
@@ -162,8 +177,9 @@ class Test(TestCase):
 
     def test_admin_oauth_nomatch(self):
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with google_oauth_data({"email": "bla@example.org", "email_verified": True}):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
 
         # We are not authenticated
         self.assertRedirects(response, "/admin/login/")
@@ -185,10 +201,11 @@ class Test(TestCase):
     )
     def test_admin_oauth_user_created(self):
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with google_oauth_data(
             {"email": "newuser@example.com", "email_verified": True}
         ):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
         self.assertRedirects(response, "/admin/")
 
         # We are authenticated
@@ -209,8 +226,9 @@ class Test(TestCase):
             email="user@example.com", password="blabla", is_active=False
         )
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with google_oauth_data({"email": "user@example.com", "email_verified": True}):
-            response = client.get("/admin/__oauth__/?code=bla")
+            response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
         # We are not authenticated, inactive user exists
         self.assertRedirects(response, "/admin/login/")
 
@@ -231,11 +249,12 @@ class Test(TestCase):
     )
     def test_admin_oauth_user_create_method_not_imported(self):
         client = Client()
+        state = start_oauth(client, "/admin/__oauth__/")
         with (
             google_oauth_data({"email": "user@example.com", "email_verified": True}),
             self.assertRaises(ImportError),
         ):
-            client.get("/admin/__oauth__/?code=bla")
+            client.get(f"/admin/__oauth__/?code=bla&state={state}")
 
     def test_authlib(self):
         self.assertEqual(
@@ -303,8 +322,9 @@ class OAuth2Test(TestCase):
     def test_oauth2_no_data(self):
         client = Client()
 
+        state = start_oauth(client, "/oauth/google/")
         with google_oauth_data({}):
-            response = client.get("/oauth/google/?code=bla")
+            response = client.get(f"/oauth/google/?code=bla&state={state}")
         self.assertRedirects(response, "/login/", fetch_redirect_response=False)
         messages = [str(m) for m in response.wsgi_request._messages]
         self.assertEqual(messages, ["Did not get an email address. Please try again."])
@@ -312,8 +332,9 @@ class OAuth2Test(TestCase):
     def test_oauth2_success(self):
         client = Client()
 
+        state = start_oauth(client, "/oauth/google/")
         with google_oauth_data({"email": "test3@example.com", "email_verified": True}):
-            response = client.get("/oauth/google/?code=bla")
+            response = client.get(f"/oauth/google/?code=bla&state={state}")
         self.assertRedirects(response, "/?login=1", fetch_redirect_response=False)
         messages = [str(m) for m in response.wsgi_request._messages]
         self.assertEqual(messages, [])
@@ -324,8 +345,9 @@ class OAuth2Test(TestCase):
         User.objects.create(email="test4@example.com", is_active=False)
         client = Client()
 
+        state = start_oauth(client, "/oauth/google/")
         with google_oauth_data({"email": "test4@example.com", "email_verified": True}):
-            response = client.get("/oauth/google/?code=bla")
+            response = client.get(f"/oauth/google/?code=bla&state={state}")
         self.assertRedirects(response, "/login/", fetch_redirect_response=False)
         messages = [str(m) for m in response.wsgi_request._messages]
         self.assertEqual(
@@ -350,7 +372,11 @@ class OAuth2Test(TestCase):
 class MicrosoftOAuth2Test(TestCase):
     def _create_request(self, path="/oauth/microsoft/"):
         factory = RequestFactory()
-        return factory.get(path)
+        request = factory.get(path)
+        # Bare RequestFactory requests have no session (no middleware runs);
+        # the client now needs one to persist/read the OAuth2 CSRF state.
+        request.session = SessionStore()
+        return request
 
     def _create_id_token(self, email, name):
         payload = {"preferred_username": email, "name": name, "email": email}
@@ -358,6 +384,22 @@ class MicrosoftOAuth2Test(TestCase):
             base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
         )
         return f"header.{encoded_payload}.signature"
+
+    def _authorized_client(self, code="test_code"):
+        """
+        Simulates a full start-then-callback OAuth2 round-trip and returns a
+        ``MicrosoftOAuth2Client`` ready for ``get_user_data()``, matching how
+        a real browser (and now the state-validating client) behaves.
+        """
+        start_request = self._create_request("/oauth/microsoft/")
+        MicrosoftOAuth2Client(start_request).get_authentication_url()
+        state = start_request.session[MICROSOFT_OAUTH_STATE_SESSION_KEY]
+
+        callback_request = self._create_request(
+            f"/oauth/microsoft/?code={code}&state={state}"
+        )
+        callback_request.session = start_request.session
+        return MicrosoftOAuth2Client(callback_request)
 
     def test_microsoft_oauth2_initialization(self):
         request = self._create_request("/fake-path/")
@@ -379,19 +421,17 @@ class MicrosoftOAuth2Test(TestCase):
         url = microsoft_client.get_authentication_url()
         self.assertIn("login.microsoftonline.com", url)
         self.assertIn("login_hint=user%40example.com", url)
-        self.assertIsNotNone(microsoft_client._state)
+        self.assertIsNotNone(request.session[MICROSOFT_OAUTH_STATE_SESSION_KEY])
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_get_user_data_success(self, m):
-        request = self._create_request("/oauth/microsoft/?code=test_code")
-        microsoft_client = MicrosoftOAuth2Client(request)
-
         id_token = self._create_id_token("test@example.com", "Test User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
             json={"access_token": "mock_token", "id_token": id_token},
         )
 
+        microsoft_client = self._authorized_client()
         user_data = microsoft_client.get_user_data()
         self.assertEqual(
             user_data, {"email": "test@example.com", "full_name": "Test User"}
@@ -399,29 +439,25 @@ class MicrosoftOAuth2Test(TestCase):
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_get_user_data_missing_email(self, m):
-        request = self._create_request("/oauth/microsoft/?code=test_code")
-        microsoft_client = MicrosoftOAuth2Client(request)
-
         id_token = self._create_id_token(None, "Test User")
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
             json={"access_token": "mock_token", "id_token": id_token},
         )
 
+        microsoft_client = self._authorized_client()
         user_data = microsoft_client.get_user_data()
         self.assertEqual(user_data, {"email": None, "full_name": "Test User"})
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_get_user_data_missing_full_name(self, m):
-        request = self._create_request("/oauth/microsoft/?code=test_code")
-        microsoft_client = MicrosoftOAuth2Client(request)
-
         id_token = self._create_id_token("test@example.com", None)
         m.post(
             "https://login.microsoftonline.com/common/oauth2/v2.0/token",
             json={"access_token": "mock_token", "id_token": id_token},
         )
 
+        microsoft_client = self._authorized_client()
         user_data = microsoft_client.get_user_data()
         self.assertEqual(user_data, {"email": "test@example.com", "full_name": None})
 
@@ -434,7 +470,8 @@ class MicrosoftOAuth2Test(TestCase):
         )
 
         client = Client()
-        response = client.get("/oauth/microsoft/?code=test_code")
+        state = start_oauth(client, "/oauth/microsoft/")
+        response = client.get(f"/oauth/microsoft/?code=test_code&state={state}")
         self.assertRedirects(response, "/?login=1", fetch_redirect_response=False)
         self.assertEqual(
             User.objects.get(email="microsoft@example.com").email,
@@ -450,7 +487,8 @@ class MicrosoftOAuth2Test(TestCase):
         )
 
         client = Client()
-        response = client.get("/oauth/microsoft/?code=test_code")
+        state = start_oauth(client, "/oauth/microsoft/")
+        response = client.get(f"/oauth/microsoft/?code=test_code&state={state}")
         self.assertRedirects(response, "/login/", fetch_redirect_response=False)
         messages = [str(msg) for msg in response.wsgi_request._messages]
         self.assertEqual(messages, ["Did not get an email address. Please try again."])
@@ -466,7 +504,8 @@ class MicrosoftOAuth2Test(TestCase):
         )
 
         client = Client()
-        response = client.get("/oauth/microsoft/?code=test_code")
+        state = start_oauth(client, "/oauth/microsoft/")
+        response = client.get(f"/oauth/microsoft/?code=test_code&state={state}")
         self.assertRedirects(response, "/login/", fetch_redirect_response=False)
         messages = [str(msg) for msg in response.wsgi_request._messages]
         self.assertEqual(

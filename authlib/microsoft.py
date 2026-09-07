@@ -8,6 +8,9 @@ from django.core.validators import validate_email
 from requests_oauthlib import OAuth2Session
 
 
+MICROSOFT_OAUTH_STATE_SESSION_KEY = "microsoft-oauth-state"
+
+
 class MicrosoftOAuth2Client:
     """Microsoft OAuth2 client for django-authlib.
 
@@ -28,19 +31,24 @@ class MicrosoftOAuth2Client:
         os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
         self._request = request
+        # Popped (not just read) so that a state value can only ever be
+        # used to validate a single callback.
+        self._state = request.session.pop(MICROSOFT_OAUTH_STATE_SESSION_KEY, None)
         self._session = OAuth2Session(
             self.client_id,
             scope=self.scope,
             redirect_uri=request.build_absolute_uri("."),
+            state=self._state,
         )
         self._login_hint = login_hint
         self._authorization_params = authorization_params or {}
 
     def get_authentication_url(self):
         self._authorization_params.setdefault("login_hint", self._login_hint)
-        authorization_url, self._state = self._session.authorization_url(
+        authorization_url, state = self._session.authorization_url(
             self.authorization_base_url, **self._authorization_params
         )
+        self._request.session[MICROSOFT_OAUTH_STATE_SESSION_KEY] = state
 
         return authorization_url
 
@@ -62,6 +70,12 @@ class MicrosoftOAuth2Client:
             return False
 
     def get_user_data(self):
+        if not self._state:
+            # No (or an already consumed) authorization request is pending
+            # for this session -- refuse to proceed instead of silently
+            # skipping CSRF state validation.
+            raise ValueError("No pending OAuth2 authorization request found.")
+
         self._session.fetch_token(
             self.token_url,
             client_secret=self.client_secret,

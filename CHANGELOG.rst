@@ -5,6 +5,18 @@ Change log
 Next version
 ============
 
+- Fixed a stale permission cache in ``PermissionsBackend`` -- results for
+  object-level permission checks (``has_perm(..., obj=...)``) could leak
+  across unrelated objects because the cache key didn't take ``obj`` into
+  account.
+- Hardened the Google, Microsoft and Facebook OAuth2 clients against
+  login CSRF: the ``state`` parameter generated for the authorization
+  request is now persisted in the session and actually validated on the
+  callback, instead of being silently ignored. A callback with no matching
+  pending authorization is now rejected. This means the two steps of the
+  OAuth2 dance (redirect to the provider, then the callback) must now
+  happen within the same session, as they always do for real browsers.
+
 
 0.18 (2026-07-02)
 =================

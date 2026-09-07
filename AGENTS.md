@@ -66,6 +66,16 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   suite previously skipped the start leg in ~10 places and had to be
   updated to do the real round-trip (see `start_oauth()` /
   `_authorized_client()` helpers in `tests/testapp/test_authlib.py`).
+  Caveat: the one-time-use part (`session.pop()`) only really holds with a
+  server-side `SESSION_ENGINE` (db/cache/file). With `signed_cookies`
+  sessions there's no server-side record to delete — popping just tells the
+  client to move on via a new `Set-Cookie`, but an old copy of the cookie
+  (leaked via XSS, a proxy log, browser history, etc.) still carries a
+  live, unconsumed `state` and stays validly signed for up to
+  `SESSION_COOKIE_AGE` (2 weeks by default). The core forgery protection
+  (attacker can't predict/plant a `state` without ever having had a copy of
+  a real cookie) is unaffected either way. Prefer a server-side session
+  backend if the one-time-use property matters to you.
 - **Magic links (`authlib/email.py`) are intentionally reusable until
   expiry**, not single-use — left that way on purpose, not just because it
   was already tested. `tests/testapp/test_registration.py::test_registration`

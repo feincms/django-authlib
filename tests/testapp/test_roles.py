@@ -1,5 +1,6 @@
 from functools import partial
 
+from django.contrib.auth import aauthenticate, authenticate
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.utils.translation import deactivate_all, gettext_lazy as _
@@ -82,3 +83,39 @@ class Test(TestCase):
             role="unknown",
         )
         self.assertFalse(unknown.has_perm("sessions.change_session"))
+
+
+class RolePermissionsBackendTest(TestCase):
+    """The backend answers permission checks and authenticates nobody."""
+
+    def setUp(self):
+        deactivate_all()
+        self.user = User.objects.create_superuser("admin@example.com", "hunter2")
+
+    @override_settings(
+        AUTHENTICATION_BACKENDS=["authlib.backends.RolePermissionsBackend"]
+    )
+    def test_it_does_not_authenticate(self):
+        self.assertIsNone(
+            authenticate(username="admin@example.com", password="hunter2")
+        )
+
+    @override_settings(
+        AUTHENTICATION_BACKENDS=["authlib.backends.RolePermissionsBackend"]
+    )
+    async def test_it_does_not_authenticate_asynchronously(self):
+        """ModelBackend implements aauthenticate() separately from authenticate()."""
+        self.assertIsNone(
+            await aauthenticate(username="admin@example.com", password="hunter2")
+        )
+
+    @override_settings(
+        AUTHENTICATION_BACKENDS=[
+            "authlib.backends.RolePermissionsBackend",
+            "django.contrib.auth.backends.ModelBackend",
+        ]
+    )
+    def test_passwords_are_the_model_backends_job(self):
+        user = authenticate(username="admin@example.com", password="hunter2")
+        self.assertEqual(user, self.user)
+        self.assertEqual(user.backend, "django.contrib.auth.backends.ModelBackend")

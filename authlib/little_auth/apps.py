@@ -7,3 +7,6 @@ class LittleAuthConfig(AppConfig):
     name = "authlib.little_auth"
     default_auto_field = "django.db.models.AutoField"
     verbose_name = capfirst(_("Authentication"))
+
+    def ready(self):
+        from authlib import checks  # noqa: F401,PLC0415

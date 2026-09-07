@@ -330,23 +330,30 @@ need to configure the setting.
 Setup
 -----
 
-Add ``authlib.backends.PermissionsBackend`` to ``AUTHENTICATION_BACKENDS``,
-**before** any backend that checks database-level permissions (such as
-``ModelBackend`` or ``EmailBackend``):
+Add ``authlib.backends.RolePermissionsBackend`` to
+``AUTHENTICATION_BACKENDS``, **before** any backend that checks
+database-level permissions (such as ``ModelBackend`` or ``EmailBackend``):
 
 .. code-block:: python
 
     AUTHENTICATION_BACKENDS = [
-        "authlib.backends.PermissionsBackend",
+        "authlib.backends.RolePermissionsBackend",
         "authlib.backends.EmailBackend",   # or any other auth backend
     ]
 
-``PermissionsBackend`` routes ``has_perm()`` calls to the role callback
+``RolePermissionsBackend`` routes ``has_perm()`` calls to the role callback
 injected by ``RoleField``.  It also implements ``get_all_permissions()`` by
 iterating every permission in the database through the callback, which is
 what drives the Django admin's per-app sidebar visibility.
 
-``PermissionsBackend`` must come first for two reasons: it avoids an
+It answers permission checks and nothing else -- it authenticates nobody, so
+it has to be accompanied by a backend which does. Add
+``django.contrib.auth.backends.ModelBackend`` if your project has
+username/password logins. (Until it was renamed this class extended
+``ModelBackend``, so password logins used to run through it, which nothing
+told you about.)
+
+``RolePermissionsBackend`` must come first for two reasons: it avoids an
 unnecessary database query when the role callback already has an answer, and
 it ensures that ``deny`` patterns cannot be bypassed by a database-level
 permission grant that would otherwise short-circuit the check.

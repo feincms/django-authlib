@@ -5,6 +5,19 @@ Change log
 Next version
 ============
 
+- **Backwards incompatible:** Renamed ``PermissionsBackend`` to
+  ``RolePermissionsBackend``, and it doesn't authenticate anyone anymore. It
+  extended ``ModelBackend``, and since it is documented as coming first,
+  username/password logins ran through it in every project rather than
+  through the authentication backend further down the list -- silently, and
+  overriding ``authenticate()`` wouldn't even have covered
+  ``aauthenticate()``. Update the path in ``AUTHENTICATION_BACKENDS``: a new
+  system check (``authlib.E010``) fails ``manage.py check`` and every
+  management command while the old one is configured, instead of letting a
+  lazy ``ImproperlyConfigured`` surface during a request. Add
+  ``django.contrib.auth.backends.ModelBackend`` to the setting if you want to
+  keep password logins. Everybody is logged out once, because sessions record
+  the path of the backend which authenticated them.
 - Added system checks for the ``ADMIN_OAUTH_PATTERNS`` setting. Callables are
   passed the match, not the email address, which makes
   ``(r"@example\.com$", lambda match: match[0])`` a silent trap: the callable

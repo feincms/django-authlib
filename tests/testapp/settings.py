@@ -61,7 +61,7 @@ SILENCED_SYSTEM_CHECKS = ["1_10.W001"]
 
 AUTH_USER_MODEL = "little_auth.User"
 AUTHENTICATION_BACKENDS = (
-    "authlib.backends.PermissionsBackend",
+    "authlib.backends.RolePermissionsBackend",
     "authlib.backends.EmailBackend",
     "django.contrib.auth.backends.ModelBackend",
 )

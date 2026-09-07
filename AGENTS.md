@@ -4,7 +4,7 @@ Authentication utilities for Django: a minimal custom user app
 (`little_auth`), OAuth2/OAuth1 login clients (Google, Microsoft, Facebook,
 Twitter), magic-link ("passwordless") email login, an `admin_oauth` app for
 SSO-gating the Django admin login page, and a small role-based permissions
-backend (`authlib.roles` / `authlib.backends.PermissionsBackend`).
+backend (`authlib.roles` / `authlib.backends.RolePermissionsBackend`).
 
 Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
@@ -29,9 +29,14 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   concrete `little_auth.User` (email-as-username, obfuscated `__str__`/
   `get_full_name` via `_obfuscate()` in `little_auth/models.py`).
 - `authlib/backends.py` — `EmailBackend` (auth by email, no password) and
-  `PermissionsBackend` (delegates `has_perm` to a per-role callback via
+  `RolePermissionsBackend` (delegates `has_perm` to a per-role callback via
   `RoleField._role_has_perm`, enumerates all permissions by testing every
   known `Permission` against that callback).
+- `authlib/checks.py` — system check for the `PermissionsBackend` →
+  `RolePermissionsBackend` rename, registered from every one of authlib's
+  `AppConfig.ready()` methods (`authlib`, `little_auth`, `admin_oauth`),
+  since `authlib` itself is an optional `INSTALLED_APPS` entry. Registering
+  the same function repeatedly is a no-op.
 - `authlib/roles.py` — `RoleField` (a `CharField` with choices sourced from
   `settings.AUTHLIB_ROLES`) and `allow_deny_globs`, a ready-made callback for
   allow/deny fnmatch-style permission rules.
@@ -55,6 +60,21 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
 ## Known nuances / open items (as of 2026-09-07)
 
+- **`RolePermissionsBackend` used to be `PermissionsBackend` and used to
+  authenticate passwords.** It extended `ModelBackend` while the docs
+  (rightly, for deny-pattern reasons) tell you to list it *first*, so
+  `authenticate(username=…, password=…)` was served by this class in every
+  project -- verified by `user.backend` pointing at it after a password
+  login. Nobody could see that from the name or the docs. It's a
+  `BaseBackend` now: renaming it is what forces projects to notice on
+  upgrade (a stale dotted path can't resolve), and `authlib/checks.py` turns
+  the resulting lazy `ImproperlyConfigured` into an `authlib.E010` system
+  check error with migration instructions. Two consequences worth
+  remembering: projects which followed the README's roles example without
+  adding `ModelBackend` lose password logins (that's the point, but it needs
+  saying), and everyone is logged out once because sessions store the
+  authenticating backend's path. Don't add a `PermissionsBackend` alias --
+  the whole mechanism depends on the old name being gone.
 - **`ADMIN_OAUTH_PATTERNS` callables receive the match, not the address**, so
   `match[0]` is only the *matched part* of the address. The natural-looking
   `(r"@example\.com$", lambda match: match[0])` therefore resolves to
@@ -137,7 +157,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   document the tradeoff (reusable-until-expiry, replayable if the link
   leaks within the expiry window) instead. If this gets revisited, the
   GET-validates/POST-consumes split is the right shape.
-- `PermissionsBackend.get_user_permissions()` must never cache results when
+- `RolePermissionsBackend.get_user_permissions()` must never cache results when
   `obj is not None` — role callbacks can decide differently per object, so
   caching on the user instance without keying on `obj` leaks stale results
   across objects (fixed 2026-09-07; mirrors how Django's own `ModelBackend`

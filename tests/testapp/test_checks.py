@@ -2,6 +2,7 @@ from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
 from authlib.admin_oauth.checks import _example_address, check_admin_oauth_patterns
+from authlib.checks import check_authentication_backends
 
 
 class AdminOAuthPatternsCheckTest(SimpleTestCase):
@@ -110,3 +111,35 @@ class AdminOAuthPatternsCheckTest(SimpleTestCase):
         ]:
             with self.subTest(pattern=pattern):
                 self.assertEqual(_example_address(pattern), expected)
+
+
+class AuthenticationBackendsCheckTest(SimpleTestCase):
+    def ids(self, backends):
+        with override_settings(AUTHENTICATION_BACKENDS=backends):
+            return [m.id for m in check_authentication_backends(app_configs=None)]
+
+    def test_settings_are_valid(self):
+        self.assertEqual(check_authentication_backends(app_configs=None), [])
+
+    def test_the_legacy_path_is_reported(self):
+        with override_settings(
+            AUTHENTICATION_BACKENDS=["authlib.backends.PermissionsBackend"]
+        ):
+            (message,) = check_authentication_backends(app_configs=None)
+        self.assertEqual(message.id, "authlib.E010")
+        self.assertIn("RolePermissionsBackend", message.msg)
+        self.assertIn("ModelBackend", message.hint)
+
+    def test_the_current_path_is_fine(self):
+        self.assertEqual(
+            self.ids(
+                [
+                    "authlib.backends.RolePermissionsBackend",
+                    "authlib.backends.EmailBackend",
+                ]
+            ),
+            [],
+        )
+
+    def test_projects_without_the_backend(self):
+        self.assertEqual(self.ids(["django.contrib.auth.backends.ModelBackend"]), [])

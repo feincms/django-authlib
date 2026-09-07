@@ -5,6 +5,18 @@ Change log
 Next version
 ============
 
+- Added ``authlib.admin_oauth.passwords.disable_passwords(admin.site)`` for
+  admin sites which should only be reachable through single sign-on: it
+  replaces the login form with one which has no username and password inputs
+  and refuses to authenticate anyone, and replaces the password change view
+  with a page which only explains itself. Single sign-on with an identity
+  provider enforcing MFA doesn't buy much while Django still accepts a
+  password. Two system checks come with it: ``authlib.W003`` warns when
+  ``django.contrib.auth``'s password change or password reset views are in the
+  URLconf (any active staff session gets into the admin, whether or not the
+  admin's login form created it), and ``authlib.E012`` complains when
+  ``disable_passwords()`` ran after the admin site's URLs had already been
+  built, in which case the password change page would stay open.
 - Fixed ``RolePermissionsBackend`` not being able to load users for a
   session (0.19a2 only): Django's test client picks the first backend which
   has a ``get_user()`` for ``force_login()``, and ``BaseBackend`` returns

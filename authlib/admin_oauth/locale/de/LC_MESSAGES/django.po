@@ -18,6 +18,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: authlib/admin_oauth/passwords.py:64
+msgid ""
+"Password authentication is disabled. Please use single sign-on to log in."
+msgstr ""
+"Die Anmeldung mit Passwort ist deaktiviert. Bitte melden Sie sich mit Single "
+"Sign-on an."
+
+#: authlib/admin_oauth/passwords.py:88
+msgid "Password authentication is disabled, so passwords cannot be changed."
+msgstr ""
+"Die Anmeldung mit Passwort ist deaktiviert, Passwörter können darum nicht "
+"geändert werden."
+
+#: authlib/admin_oauth/passwords.py:111
+msgid "Password change"
+msgstr "Passwort ändern"
+
+#: authlib/admin_oauth/templates/admin_oauth/password_change.html:7
+msgid "Home"
+msgstr "Start"
+
 #: authlib/admin_oauth/templates/admin/login.html:38
 msgid "Log in using Google"
 msgstr "Mit Google anmelden"

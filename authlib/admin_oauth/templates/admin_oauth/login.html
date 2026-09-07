@@ -1,0 +1,22 @@
+{% extends "admin/login.html" %}
+
+{% comment %}
+The login form has no fields left, so all that remains of it is the "Log in"
+button and, if the project wired up django.contrib.auth's password reset views,
+a link to those. Hiding the form keeps the single sign-on buttons and any error
+messages, both of which live outside of it.
+
+The styles go into extrahead, not extrastyle, because admin_oauth's own
+admin/login.html styles .admin-sso from there -- and extrahead comes last.
+{% endcomment %}
+
+{% block extrahead %}{{ block.super }}
+<style>
+#login-form {
+  display: none;
+}
+.admin-sso {
+  border-top: none;
+}
+</style>
+{% endblock extrahead %}

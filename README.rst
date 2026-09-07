@@ -228,6 +228,63 @@ your domain:
 You could also remove the fallback line; in this case users can only
 authenticate if they have a personal staff account.
 
+Disabling passwords in the admin
+================================
+
+Single sign-on with an identity provider which enforces MFA is only worth
+something if a password can't be used instead: as long as Django still accepts
+one, the MFA is optional in practice. ``disable_passwords`` closes the admin
+site's login form and its password change page:
+
+.. code-block:: python
+
+    from django.contrib import admin
+    from django.urls import include, path
+
+    from authlib.admin_oauth.passwords import disable_passwords
+
+    disable_passwords(admin.site)
+
+    urlpatterns = [
+        path("", include("authlib.admin_oauth.urls")),
+        path("admin/", admin.site.urls),
+        # ...
+    ]
+
+The login page then only shows the single sign-on buttons: no username and
+password inputs are rendered at all, and a POST with credentials is refused
+before ``authenticate()`` is called, so no password ever reaches an
+authentication backend. The password change page only explains itself.
+
+Call ``disable_passwords`` before the admin site's URLs are built -- at the top
+of the ROOT_URLCONF module as above, or in an ``admin.py``, which is imported
+while the apps are loading. The ``authlib.E012`` system check complains if the
+call came too late for the password change page.
+
+Locally you probably have no OAuth credentials, so skip the call in
+development:
+
+.. code-block:: python
+
+    if not settings.DEBUG:
+        disable_passwords(admin.site)
+
+The templates come from ``authlib.admin_oauth``; pass ``login_template`` and/or
+``password_change_template`` to use your own (``authlib.E011`` tells you if a
+template cannot be loaded).
+
+Only the admin site is affected. Everything else which sets passwords keeps
+working: ``django.contrib.auth``'s password change and password reset views,
+the user admin's "change password" form, ``manage.py changepassword``. The
+first two matter more than they look, since any active staff session gets into
+the admin whether or not the admin's login form created it -- so ``manage.py
+check`` warns (``authlib.W003``) when they appear in the URLconf. If the
+non-staff users of your site do need passwords, silence the check:
+
+.. code-block:: python
+
+    SILENCED_SYSTEM_CHECKS = ["authlib.W003"]
+
 Little Auth
 ===========
 

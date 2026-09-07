@@ -50,13 +50,17 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   self-contained (no shared base class — small duplication like the base64
   padding helper across google.py/microsoft.py is the accepted style here,
   not an oversight).
+- `authlib/admin_oauth/passwords.py` — `disable_passwords(admin.site)` for
+  SSO-only admin sites (login form without inputs, password change page
+  replaced by an explanation), plus the two forms it installs.
 - `authlib/admin_oauth/` — separate SSO flow for the Django admin login page,
   with regex-pattern-based email→admin-username mapping
   (`ADMIN_OAUTH_PATTERNS`) and optional auto-provisioning
   (`ADMIN_OAUTH_CREATE_USER_CALLBACK`). `checks.py` holds the system checks
   for that setting (registered from `apps.py`'s `ready()`; the app label
   stays `admin_oauth`), including a tiny example-string generator over the
-  parsed regex.
+  parsed regex, and the checks for `disable_passwords()`
+  (`authlib.E011`/`E012`/`W003`).
 
 ## Known nuances / open items (as of 2026-09-07)
 
@@ -157,6 +161,36 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   document the tradeoff (reusable-until-expiry, replayable if the link
   leaks within the expiry window) instead. If this gets revisited, the
   GET-validates/POST-consumes split is the right shape.
+- **`disable_passwords()` (`admin_oauth/passwords.py`) can only be half a
+  form-level feature.** The login half is a form (`AdminSite.login_form`), and
+  that's the right place: `AdminSite` is its only consumer, and
+  `AuthenticationForm.clean()` is where `authenticate()` happens, so refusing
+  there means no password reaches a backend. An authentication
+  backend cannot do this job — `authenticate()` is global and a backend has no
+  way to know it is serving the admin login form. The password change half
+  *cannot* work that way: `AdminSite.password_change_form` only exists in
+  Django 6.0 and better, so on 3.2--5.2 setting it does nothing at all. Hence
+  the instance-level replacement of `AdminSite.password_change`, and hence its
+  one weakness: `get_urls()` captures the bound method, so a call which arrives
+  after `site.urls` was built silently leaves the page open. `authlib.E012`
+  detects exactly that by comparing `callback.__wrapped__` (set by
+  `functools.update_wrapper` inside `AdminSite.get_urls`'s `wrap()`) against
+  `site.password_change`; `password_change_form` is set as well, which is what
+  still refuses in that situation on Django 6.0+.
+- **The checks for `disable_passwords()` have to load the URLconf themselves**
+  (`_url_patterns()`): projects call it in their ROOT_URLCONF, and
+  `CheckRegistry.run_checks()` snapshots the list of checks before running any
+  of them, so registering a check from `disable_passwords()` would be too late
+  to ever run. Registering unconditionally and loading the URLconf from inside
+  the check inverts that ordering. A URLconf which cannot be loaded produces no
+  messages at all — Django's own checks report it.
+- `authlib.W003` deliberately does *not* look for `LoginView`. A frontend login
+  view with passwords is common and legitimate, and warning about it would be
+  noise which gets the whole check silenced — which would take the password
+  reset warning down with it. The views it does look for are found by walking
+  the URLconf for `view_class` subclasses, not by `reverse()`ing names, so
+  namespaced and renamed URLs are caught too (and
+  `password_reset_confirm`, which cannot be reversed without arguments).
 - `RolePermissionsBackend.get_user_permissions()` must never cache results when
   `obj is not None` — role callbacks can decide differently per object, so
   caching on the user instance without keying on `obj` leaks stale results

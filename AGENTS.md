@@ -6,7 +6,7 @@ Twitter), magic-link ("passwordless") email login, an `admin_oauth` app for
 SSO-gating the Django admin login page, and a small role-based permissions
 backend (`authlib.roles` / `authlib.backends.PermissionsBackend`).
 
-Published to PyPI as `django-authlib`. Repo: matthiask/django-authlib.
+Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
 ## Dev workflow
 

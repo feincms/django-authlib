@@ -64,7 +64,7 @@ Next version
 `0.14`_ (2023-03-21)
 ====================
 
-.. _0.14: https://github.com/matthiask/django-authlib/compare/0.13...0.14
+.. _0.14: https://github.com/feincms/django-authlib/compare/0.13...0.14
 
 - Added Django 4.1 and 4.2 to the CI matrix.
 - Made the bundled OAuth2 views pass the exception message to
@@ -78,7 +78,7 @@ Next version
 `0.13`_ (2022-02-28)
 ====================
 
-.. _0.13: https://github.com/matthiask/django-authlib/compare/0.12...0.13
+.. _0.13: https://github.com/feincms/django-authlib/compare/0.12...0.13
 
 - Added a ``default_auto_field`` to the ``little_auth`` appconfig.
 
@@ -86,7 +86,7 @@ Next version
 `0.12`_ (2022-01-04)
 ====================
 
-.. _0.12: https://github.com/matthiask/django-authlib/compare/0.11...0.12
+.. _0.12: https://github.com/feincms/django-authlib/compare/0.11...0.12
 
 - Added pre-commit.
 - Dropped Python < 3.8, Django < 3.2.
@@ -267,14 +267,14 @@ Next version
 
 .. _django-authlib: https://django-authlib.readthedocs.io/
 
-.. _0.1: https://github.com/matthiask/django-authlib/commit/0e4a81c11
-.. _0.2: https://github.com/matthiask/django-authlib/compare/0.1...0.2
-.. _0.3: https://github.com/matthiask/django-authlib/compare/0.2...0.3
-.. _0.4: https://github.com/matthiask/django-authlib/compare/0.3...0.4
-.. _0.5: https://github.com/matthiask/django-authlib/compare/0.4...0.5
-.. _0.6: https://github.com/matthiask/django-authlib/compare/0.5...0.6
-.. _0.7: https://github.com/matthiask/django-authlib/compare/0.6...0.7
-.. _0.8: https://github.com/matthiask/django-authlib/compare/0.7...0.8
-.. _0.9: https://github.com/matthiask/django-authlib/compare/0.8...0.9
-.. _0.10: https://github.com/matthiask/django-authlib/compare/0.9...0.10
-.. _0.11: https://github.com/matthiask/django-authlib/compare/0.10...0.11
+.. _0.1: https://github.com/feincms/django-authlib/commit/0e4a81c11
+.. _0.2: https://github.com/feincms/django-authlib/compare/0.1...0.2
+.. _0.3: https://github.com/feincms/django-authlib/compare/0.2...0.3
+.. _0.4: https://github.com/feincms/django-authlib/compare/0.3...0.4
+.. _0.5: https://github.com/feincms/django-authlib/compare/0.4...0.5
+.. _0.6: https://github.com/feincms/django-authlib/compare/0.5...0.6
+.. _0.7: https://github.com/feincms/django-authlib/compare/0.6...0.7
+.. _0.8: https://github.com/feincms/django-authlib/compare/0.7...0.8
+.. _0.9: https://github.com/feincms/django-authlib/compare/0.8...0.9
+.. _0.10: https://github.com/feincms/django-authlib/compare/0.9...0.10
+.. _0.11: https://github.com/feincms/django-authlib/compare/0.10...0.11

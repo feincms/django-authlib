@@ -2,8 +2,8 @@
 django-authlib - Authentication utils for Django
 ================================================
 
-.. image:: https://github.com/matthiask/django-authlib/actions/workflows/tests.yml/badge.svg
-    :target: https://github.com/matthiask/django-authlib/
+.. image:: https://github.com/feincms/django-authlib/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/feincms/django-authlib/
     :alt: CI Status
 
 .. image:: https://readthedocs.org/projects/django-authlib/badge/?version=latest
@@ -296,7 +296,7 @@ The above template is inspired from:
 * `Messages Django documentation <https://docs.djangoproject.com/en/dev/ref/contrib/messages/#displaying-messages>`_
 * `Django login template <https://github.com/django/django/blob/67d0c4644acfd7707be4a31e8976f865509b09ac/django/contrib/admin/templates/admin/login.html#L21-L44>`_
 
-More details are documented in `the relevant module <https://github.com/matthiask/django-authlib/blob/main/authlib/email.py>`_.
+More details are documented in `the relevant module <https://github.com/feincms/django-authlib/blob/main/authlib/email.py>`_.
 
 
 Roles

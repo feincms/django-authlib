@@ -38,7 +38,7 @@ optional-dependencies.tests = [
   "coverage",
   "requests-mock",
 ]
-urls.Homepage = "http://github.com/matthiask/django-authlib/"
+urls.Homepage = "http://github.com/feincms/django-authlib/"
 
 [tool.hatch]
 version.path = "authlib/__init__.py"

@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.19 (2026-09-09)
+=================
+
 - Added ``authlib.admin_oauth.passwords.disable_passwords(admin.site)`` for
   admin sites which should only be reachable through single sign-on: it
   replaces the login form with one which has no username and password inputs

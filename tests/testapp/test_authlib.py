@@ -474,6 +474,20 @@ class MicrosoftOAuth2Test(TestCase):
         self.assertEqual(microsoft_client.scope, ["openid", "profile", "email"])
         self.assertEqual(microsoft_client._login_hint, "user@example.com")
 
+    @patch.object(MicrosoftOAuth2Client, "tenant", "example.onmicrosoft.com")
+    def test_microsoft_oauth2_tenant(self):
+        request = self._create_request("/oauth/microsoft/")
+        microsoft_client = MicrosoftOAuth2Client(request)
+        self.assertTrue(
+            microsoft_client.get_authentication_url().startswith(
+                "https://login.microsoftonline.com/example.onmicrosoft.com/oauth2/v2.0/authorize?"
+            )
+        )
+        self.assertEqual(
+            microsoft_client.token_url,
+            "https://login.microsoftonline.com/example.onmicrosoft.com/oauth2/v2.0/token",
+        )
+
     def test_microsoft_oauth2_authorization_url(self):
         request = self._create_request("/oauth/microsoft/")
         microsoft_client = MicrosoftOAuth2Client(request, login_hint="user@example.com")

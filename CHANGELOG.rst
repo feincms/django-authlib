@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+- Added the optional ``MICROSOFT_TENANT_ID`` setting. Microsoft logins use the
+  ``common`` endpoints as before when it isn't set.
+
 0.19 (2026-09-09)
 =================
 

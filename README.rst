@@ -55,6 +55,12 @@ settings:
 - ``TWITTER_CLIENT_ID``
 - ``TWITTER_CLIENT_SECRET``
 
+Microsoft logins accept work, school and personal accounts from any tenant by
+default. Set ``MICROSOFT_TENANT_ID`` to your directory (tenant) ID, which is
+shown on the app registration's overview page in the Azure portal, to only
+accept accounts of your organization; the authorization and token endpoints are
+derived from it. Single-tenant app registrations require this setting.
+
 Note that you have to configure the Twitter app to allow email access,
 this is not enabled by default.
 

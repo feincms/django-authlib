@@ -17,10 +17,10 @@ class MicrosoftOAuth2Client:
     Requires OAUTHLIB_RELAX_TOKEN_SCOPE=1 to handle scope mismatches.
     """
 
-    authorization_base_url = (
-        "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
-    )
-    token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+    # "common" accepts work, school and personal accounts from any tenant;
+    # set MICROSOFT_TENANT_ID to a tenant ID (or domain) to only accept
+    # accounts of that organization.
+    tenant = getattr(settings, "MICROSOFT_TENANT_ID", None) or "common"
     scope = ["openid", "profile", "email"]
     client_id = getattr(settings, "MICROSOFT_CLIENT_ID", None)
     client_secret = getattr(settings, "MICROSOFT_CLIENT_SECRET", None)
@@ -42,6 +42,14 @@ class MicrosoftOAuth2Client:
         )
         self._login_hint = login_hint
         self._authorization_params = authorization_params or {}
+
+    @property
+    def authorization_base_url(self):
+        return f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/authorize"
+
+    @property
+    def token_url(self):
+        return f"https://login.microsoftonline.com/{self.tenant}/oauth2/v2.0/token"
 
     def get_authentication_url(self):
         self._authorization_params.setdefault("login_hint", self._login_hint)

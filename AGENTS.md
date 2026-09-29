@@ -12,7 +12,9 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
 - Run tests: `cd tests && python manage.py test` (uses `tests/testapp/settings.py`,
   sqlite in-memory DB, no external network calls — OAuth providers are mocked
-  with `requests_mock`).
+  with `requests_mock`). That needs a prepared virtualenv; `tox` always works
+  and is the way to go without one, e.g. `tox -e py314-dj61` for a single
+  environment (see `tox.ini` for the matrix).
 - Lint: `ruff check authlib/` (ruff config lives in `pyproject.toml`).
 - Pre-commit hooks (ruff, ruff-format, django-upgrade, biome, etc.) run on
   commit; don't bypass them with `--no-verify`.

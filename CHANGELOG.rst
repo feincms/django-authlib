@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+- URL-encoded the ``next`` parameter in the admin SSO login buttons; a
+  ``next`` URL with a query string lost everything after its first ``&``.
+
 - Fixed ``RolePermissionsBackend`` crashing with an ``AttributeError`` on
   permission checks for anonymous users, e.g. ``{% if perms.app.view_thing %}``
   in a template rendered for a visitor who isn't logged in.

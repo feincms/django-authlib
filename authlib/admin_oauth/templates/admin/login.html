@@ -37,11 +37,11 @@
 <div class="admin-sso">
   {% get_setting "GOOGLE_CLIENT_ID" as google_client_id %}
   {% if google_client_id %}
-  <a class="button" href="{% url 'admin_oauth' %}?next={{ request.GET.next }}">{% trans "Log in using Google" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
+  <a class="button" href="{% url 'admin_oauth' %}?next={{ request.GET.next|urlencode }}">{% trans "Log in using Google" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
   {% endif %}
   {% get_setting "MICROSOFT_CLIENT_ID" as microsoft_client_id %}
   {% if microsoft_client_id %}
-  <a class="button" href="{% url 'admin_oauth_microsoft' %}?next={{ request.GET.next }}">{% trans "Log in using Microsoft" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
+  <a class="button" href="{% url 'admin_oauth_microsoft' %}?next={{ request.GET.next|urlencode }}">{% trans "Log in using Microsoft" %}{% if request.session.admin_oauth_prompt %} {% translate '(select account)' %}{% endif %}</a>
   {% endif %}
 </div>
 {% endblock content %}

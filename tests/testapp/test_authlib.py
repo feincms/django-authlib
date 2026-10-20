@@ -175,6 +175,15 @@ class Test(TestCase):
         # We are authenticated
         self.assertEqual(client.get("/admin/little_auth/").status_code, 200)
 
+    def test_admin_login_buttons_encode_next(self):
+        response = Client().get(
+            "/admin/login/?next=/admin/little_auth/user/%3Fa%3D1%26b%3D2"
+        )
+        self.assertContains(
+            response,
+            'href="/admin/__oauth__/?next=/admin/little_auth/user/%3Fa%3D1%26b%3D2"',
+        )
+
     def test_admin_oauth_nomatch(self):
         client = Client()
         state = start_oauth(client, "/admin/__oauth__/")

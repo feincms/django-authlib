@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.21 (2026-10-20)
+=================
+
 - Hardened Microsoft logins: the ``email`` claim, which Entra ID doesn't
   verify, is only used as a fallback for a ``preferred_username`` which isn't
   an email address when the ``xms_edov`` claim says that the address's domain

@@ -446,8 +446,9 @@ class MicrosoftOAuth2Test(TestCase):
         request.session = SessionStore()
         return request
 
-    def _create_id_token(self, email, name):
-        payload = {"preferred_username": email, "name": name, "email": email}
+    def _create_id_token(self, username, name, **claims):
+        payload = {"preferred_username": username, "name": name, "email": username}
+        payload |= claims
         encoded_payload = (
             base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
         )
@@ -530,6 +531,37 @@ class MicrosoftOAuth2Test(TestCase):
         microsoft_client = self._authorized_client()
         user_data = microsoft_client.get_user_data()
         self.assertEqual(user_data, {"email": None, "full_name": "Test User"})
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_unverified_email_claim(self, m):
+        # preferred_username isn't an email address (e.g. a phone number),
+        # and nothing says that the email claim is verified -- anyone
+        # administering some tenant can set it to whatever they like.
+        id_token = self._create_id_token(
+            "+41790000000", "Test User", email="victim@example.com"
+        )
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token", "id_token": id_token},
+        )
+
+        user_data = self._authorized_client().get_user_data()
+        self.assertEqual(user_data, {"email": None, "full_name": "Test User"})
+
+    @requests_mock.Mocker()
+    def test_microsoft_oauth2_verified_email_claim(self, m):
+        id_token = self._create_id_token(
+            "+41790000000", "Test User", email="test@example.com", xms_edov=True
+        )
+        m.post(
+            "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            json={"access_token": "mock_token", "id_token": id_token},
+        )
+
+        user_data = self._authorized_client().get_user_data()
+        self.assertEqual(
+            user_data, {"email": "test@example.com", "full_name": "Test User"}
+        )
 
     @requests_mock.Mocker()
     def test_microsoft_oauth2_get_user_data_missing_full_name(self, m):

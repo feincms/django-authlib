@@ -96,7 +96,14 @@ class MicrosoftOAuth2Client:
         claims = self._parse_id_token(id_token) if id_token else {}
 
         preferred_username = claims.get("preferred_username")
-        email = claims.get("email")
+        # Entra ID doesn't verify the email claim: an administrator of *any*
+        # tenant can put any address there, which with the "common" endpoints
+        # means logging in as anyone ("nOAuth"). Only use it when Microsoft
+        # says that the domain's owner verified it, which requires adding the
+        # xms_edov optional claim to the app registration.
+        email = (
+            claims.get("email") if claims.get("xms_edov") in {True, "true"} else None
+        )
         user_email = (
             preferred_username if self._is_valid_email(preferred_username) else email
         )

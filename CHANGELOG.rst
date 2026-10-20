@@ -5,6 +5,13 @@ Change log
 Next version
 ============
 
+- Hardened Microsoft logins: the ``email`` claim, which Entra ID doesn't
+  verify, is only used as a fallback for a ``preferred_username`` which isn't
+  an email address when the ``xms_edov`` claim says that the address's domain
+  owner verified it. Previously, an administrator of any tenant could set a
+  user's email to someone else's address and log in as them, including into
+  the admin through ``authlib.admin_oauth``.
+
 - URL-encoded the ``next`` parameter in the admin SSO login buttons; a
   ``next`` URL with a query string lost everything after its first ``&``.
 

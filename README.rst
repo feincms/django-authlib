@@ -61,6 +61,14 @@ shown on the app registration's overview page in the Azure portal, to only
 accept accounts of your organization; the authorization and token endpoints are
 derived from it. Single-tenant app registrations require this setting.
 
+The email address of a Microsoft login is taken from the ``preferred_username``
+claim; for work and school accounts, that is the user principal name, whose
+domain has to be verified in the user's tenant. Entra ID doesn't verify the
+``email`` claim, so it is only used when ``preferred_username`` isn't an email
+address and the ``xms_edov`` (email domain owner verified) claim says it can be
+trusted. Add ``email`` and ``xms_edov`` as optional ID token claims to the app
+registration if you need that fallback.
+
 Note that you have to configure the Twitter app to allow email access,
 this is not enabled by default.
 

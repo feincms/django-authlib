@@ -143,6 +143,17 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   (attacker can't predict/plant a `state` without ever having had a copy of
   a real cookie) is unaffected either way. Prefer a server-side session
   backend if the one-time-use property matters to you.
+- **Microsoft's `email` claim is only trusted together with `xms_edov`.**
+  Entra ID doesn't verify the `email` claim (an admin of *any* tenant can set
+  it, the "nOAuth" problem), and the default `common` endpoints accept every
+  tenant. `preferred_username` is used first: for Entra accounts it is the
+  UPN, whose domain must be verified in the user's tenant, and Microsoft
+  accounts verify their sign-in addresses. The `email` claim is only the
+  fallback for a `preferred_username` which isn't an email address, and only
+  when `xms_edov` (an optional claim the app registration has to request) is
+  true. Microsoft's own docs say not to authorize on `email` or `upn` at all
+  and to use `oid`; this library maps logins to users by email by design, so
+  this is the closest safe reading of that advice.
 - **Magic links (`authlib/email.py`) are intentionally reusable until
   expiry**, not single-use — left that way on purpose, not just because it
   was already tested. `tests/testapp/test_registration.py::test_registration`

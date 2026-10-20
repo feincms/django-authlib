@@ -2,6 +2,7 @@ from functools import partial
 from unittest import skipUnless
 
 from django.contrib.auth import BACKEND_SESSION_KEY, authenticate
+from django.contrib.auth.models import AnonymousUser
 from django.test import Client, TestCase
 from django.test.utils import override_settings
 from django.utils.translation import deactivate_all, gettext_lazy as _
@@ -93,6 +94,13 @@ class Test(TestCase):
             role="unknown",
         )
         self.assertFalse(unknown.has_perm("sessions.change_session"))
+
+    def test_anonymous_user(self):
+        # AnonymousUser asks the backends too, and has no role.
+        anonymous = AnonymousUser()
+        self.assertFalse(anonymous.has_perm("sessions.change_session"))
+        self.assertEqual(anonymous.get_all_permissions(), set())
+        self.assertFalse(anonymous.has_module_perms("sessions"))
 
 
 class RolePermissionsBackendTest(TestCase):

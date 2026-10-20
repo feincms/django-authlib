@@ -5,6 +5,10 @@ Change log
 Next version
 ============
 
+- Fixed ``RolePermissionsBackend`` crashing with an ``AttributeError`` on
+  permission checks for anonymous users, e.g. ``{% if perms.app.view_thing %}``
+  in a template rendered for a visitor who isn't logged in.
+
 0.20 (2026-09-29)
 =================
 

@@ -72,7 +72,8 @@ class RolePermissionsBackend(BaseBackend):
         return self.get_user_permissions(user, obj=obj)
 
     def has_perm(self, user, perm, obj=None):
-        return user._role_has_perm(perm=perm, obj=obj)
+        # AnonymousUser asks every backend as well, and has no role.
+        return user.is_active and user._role_has_perm(perm=perm, obj=obj)
 
     def has_module_perms(self, user_obj, app_label):
         """

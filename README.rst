@@ -138,6 +138,29 @@ writing ``django-authlib``'s Python code is less than 500 lines):
         path("logout/", views.logout, name="logout"),
     ]
 
+``views.oauth2`` also accepts ``email_login`` and ``post_login_response``
+arguments which replace the functions of the same name in ``authlib.views``,
+e.g. to remember in the session that a user logged in through an OAuth
+provider:
+
+.. code-block:: python
+
+    def sso_email_login(request, **kwargs):
+        user, created = views.email_login(request, **kwargs)
+        if user:
+            request.session["is_sso"] = True
+        return user, created
+
+    path(
+        "oauth/google/",
+        views.oauth2,
+        {"client_class": GoogleOAuth2Client, "email_login": sso_email_login},
+        name="accounts_oauth_google",
+    )
+
+``views.login`` accepts ``post_login_response`` too, and
+``views.email_registration`` accepts both.
+
 
 Admin OAuth2
 ============

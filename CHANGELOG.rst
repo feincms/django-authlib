@@ -7,6 +7,8 @@ Next version
 
 - Updated the URLconf examples in the README to use ``path()`` instead of
   ``url()``, which was removed in Django 4.0.
+- Documented the ``email_login`` and ``post_login_response`` arguments of the
+  bundled views, e.g. for flagging sessions established through OAuth.
 
 0.21 (2026-10-20)
 =================

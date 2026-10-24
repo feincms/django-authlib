@@ -96,7 +96,7 @@ writing ``django-authlib``'s Python code is less than 500 lines):
 
 .. code-block:: python
 
-    from django.conf.urls import url
+    from django.urls import path
     from authlib import views
     from authlib.facebook import FacebookOAuth2Client
     from authlib.google import GoogleOAuth2Client
@@ -104,58 +104,38 @@ writing ``django-authlib``'s Python code is less than 500 lines):
     from authlib.twitter import TwitterOAuthClient
 
     urlpatterns = [
-        url(
-            r"^login/$",
-            views.login,
-            name="login",
-        ),
-        url(
-            r"^oauth/facebook/$",
+        path("login/", views.login, name="login"),
+        path(
+            "oauth/facebook/",
             views.oauth2,
-            {
-                "client_class": FacebookOAuth2Client,
-            },
+            {"client_class": FacebookOAuth2Client},
             name="accounts_oauth_facebook",
         ),
-        url(
-            r"^oauth/google/$",
+        path(
+            "oauth/google/",
             views.oauth2,
-            {
-                "client_class": GoogleOAuth2Client,
-            },
+            {"client_class": GoogleOAuth2Client},
             name="accounts_oauth_google",
         ),
-        url(
-            r"^oauth/microsoft/$",
+        path(
+            "oauth/microsoft/",
             views.oauth2,
-            {
-                "client_class": MicrosoftOAuth2Client,
-            },
+            {"client_class": MicrosoftOAuth2Client},
             name="accounts_oauth_microsoft",
         ),
-        url(
-            r"^oauth/twitter/$",
+        path(
+            "oauth/twitter/",
             views.oauth2,
-            {
-                "client_class": TwitterOAuthClient,
-            },
+            {"client_class": TwitterOAuthClient},
             name="accounts_oauth_twitter",
         ),
-        url(
-            r"^email/$",
-            views.email_registration,
-            name="email_registration",
-        ),
-        url(
-            r"^email/(?P<code>[^/]+)/$",
+        path("email/", views.email_registration, name="email_registration"),
+        path(
+            "email/<str:code>/",
             views.email_registration,
             name="email_registration_confirm",
         ),
-        url(
-            r"^logout/$",
-            views.logout,
-            name="logout",
-        ),
+        path("logout/", views.logout, name="logout"),
     ]
 
 
@@ -189,7 +169,7 @@ Installation is as follows:
 .. code-block:: python
 
     urlpatterns = [
-        url(r"", include("authlib.admin_oauth.urls")),
+        path("", include("authlib.admin_oauth.urls")),
         # ...
     ]
 

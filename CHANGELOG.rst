@@ -11,6 +11,10 @@ Next version
   bundled views, e.g. for flagging sessions established through OAuth.
 - Documented how to persist the name OAuth providers return using a custom
   ``email_login``.
+- Passed the data returned by the OAuth provider to
+  ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` as a ``user_data`` keyword argument, if
+  the callback accepts one. Callbacks only accepting ``(request, email)`` keep
+  working unchanged.
 
 0.21 (2026-10-20)
 =================

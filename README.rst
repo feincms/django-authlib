@@ -262,6 +262,26 @@ your domain:
 You could also remove the fallback line; in this case users can only
 authenticate if they have a personal staff account.
 
+Staff accounts can also be created on the fly. Set
+``ADMIN_OAUTH_CREATE_USER_CALLBACK`` to the dotted path of a callable; it is
+called with the request and an address produced by ``ADMIN_OAUTH_PATTERNS``
+when no user with that address exists, and may (but doesn't have to) create
+one. ``"authlib.admin_oauth.views.create_superuser"`` creates superusers. If
+the callable accepts a ``user_data`` keyword argument it also receives the data
+the OAuth provider returned, e.g. to persist the name:
+
+.. code-block:: python
+
+    def create_staff_user(request, email, *, user_data):
+        User.objects.create(
+            email=email,
+            full_name=user_data.get("full_name") or "",
+            is_staff=True,
+        )
+
+``user_data`` describes the visitor, whose address (``user_data["email"]``)
+isn't necessarily the address the callable is asked to create an account for.
+
 Disabling passwords in the admin
 ================================
 

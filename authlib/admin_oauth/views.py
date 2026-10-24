@@ -1,3 +1,4 @@
+import inspect
 import logging
 import re
 
@@ -76,8 +77,7 @@ def admin_oauth(request, client_class=None):
                     )
                     continue
                 if not user and ADMIN_OAUTH_CREATE_USER_CALLBACK:
-                    fn = import_string(ADMIN_OAUTH_CREATE_USER_CALLBACK)
-                    fn(request, user_mail)
+                    _create_user(request, user_mail, user_data)
                     user = auth.authenticate(email=user_mail)
                 if user and user.is_staff:
                     auth.login(request, user)
@@ -110,7 +110,19 @@ def admin_oauth(request, client_class=None):
     return response
 
 
-def create_superuser(request, email):
+def _create_user(request, email, user_data):
+    fn = import_string(ADMIN_OAUTH_CREATE_USER_CALLBACK)
+    try:
+        inspect.signature(fn).bind(request, email, user_data=user_data)
+    except TypeError:
+        # Callbacks written before user_data was passed only accept
+        # (request, email).
+        fn(request, email)
+    else:
+        fn(request, email, user_data=user_data)
+
+
+def create_superuser(request, email, **kwargs):
     user_model = auth.get_user_model()
     if user_model.objects.filter(email=email).exists() is False:
         user = user_model(email=email, is_active=True, is_staff=True, is_superuser=True)

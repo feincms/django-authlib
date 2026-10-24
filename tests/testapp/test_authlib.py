@@ -27,6 +27,19 @@ except ImportError:
     has_login_required_middleware = False
 
 
+created_users = []
+
+
+def create_user_with_data(request, email, *, user_data):
+    created_users.append((email, user_data))
+    User.objects.create(email=email, is_staff=True)
+
+
+def create_user_without_data(request, email):
+    created_users.append((email, None))
+    User.objects.create(email=email, is_staff=True)
+
+
 @contextmanager
 def google_oauth_data(data):
     with requests_mock.Mocker() as m:
@@ -304,6 +317,38 @@ class Test(TestCase):
         self.assertEqual(
             messages, ["No matching staff users for email address 'user@example.com'"]
         )
+
+    @patch(
+        "authlib.admin_oauth.views.ADMIN_OAUTH_PATTERNS",
+        new=[
+            (r"^.*@example\.com$", lambda match: match.group(0)),
+        ],
+    )
+    def test_admin_oauth_user_create_callback_user_data(self):
+        for callback, expected in [
+            (
+                "testapp.test_authlib.create_user_with_data",
+                {"email": "new1@example.com", "full_name": "New User"},
+            ),
+            ("testapp.test_authlib.create_user_without_data", None),
+        ]:
+            with (
+                self.subTest(callback=callback),
+                patch(
+                    "authlib.admin_oauth.views.ADMIN_OAUTH_CREATE_USER_CALLBACK",
+                    new=callback,
+                ),
+            ):
+                email = "new1@example.com" if expected else "new2@example.com"
+                created_users.clear()
+                client = Client()
+                state = start_oauth(client, "/admin/__oauth__/")
+                with google_oauth_data(
+                    {"email": email, "email_verified": True, "name": "New User"}
+                ):
+                    response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
+                self.assertRedirects(response, "/admin/")
+                self.assertEqual(created_users, [(email, expected)])
 
     @patch(
         "authlib.admin_oauth.views.ADMIN_OAUTH_CREATE_USER_CALLBACK",

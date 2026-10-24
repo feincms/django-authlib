@@ -8,3 +8,4 @@ htmlcov
 *.py?
 *.sw?
 .tox
+.venv

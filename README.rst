@@ -427,6 +427,42 @@ The above template is inspired from:
 
 More details are documented in `the relevant module <https://github.com/feincms/django-authlib/blob/main/authlib/email.py>`_.
 
+Magic links are signed, not stored: they work any number of times, from any
+device and browser, until they expire. Anyone who gets hold of a link before
+then -- because it was forwarded, or ended up in a log -- can log in with it
+too. The links expire after three hours by default; pass a lower ``max_age``
+(in seconds) to the confirmation URL's ``views.email_registration`` to shorten
+that window:
+
+.. code-block:: python
+
+    path(
+        "email/<str:code>/",
+        views.email_registration,
+        {"max_age": 15 * 60},
+        name="email_registration_confirm",
+    ),
+
+Making links single-use or binding them to the browser which requested them
+would close that window, but both have costs which made us leave them out:
+
+- Corporate mail gateways and virus scanners routinely open every link in an
+  email before the recipient does. A link which is consumed on first use is
+  gone before the user ever clicks it.
+- Requesting a link on one device and opening the email on another is common,
+  and many mobile mail apps open links in their own browser with a separate
+  cookie jar. A link bound to the requesting browser with a cookie fails in
+  all those cases, with an error users can't make sense of. It doesn't help
+  against a compromised mailbox either, since whoever reads the mail can
+  request a link themselves.
+
+If browser binding is worth that to you, the building blocks exist: generate a
+random value, pass it to ``form.send_mail(payload=...)`` so that it's signed
+into the link, and set it as a cookie on the response. In your own
+confirmation view, ``authlib.email.decode()`` returns the payload alongside the
+email address; refuse the login unless it matches the cookie
+(``secrets.compare_digest``).
+
 
 Roles
 =====

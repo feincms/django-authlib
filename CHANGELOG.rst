@@ -11,6 +11,9 @@ Next version
   bundled views, e.g. for flagging sessions established through OAuth.
 - Documented how to persist the name OAuth providers return using a custom
   ``email_login``.
+- Documented that magic links can be used repeatedly and from any browser until
+  they expire, how to shorten their lifetime, and why they aren't single-use or
+  bound to the requesting browser.
 - Passed the data returned by the OAuth provider to
   ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` as a ``user_data`` keyword argument.
   Callbacks only accepting ``(request, email)`` are still called that way, but

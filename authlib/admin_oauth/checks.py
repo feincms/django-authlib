@@ -24,6 +24,7 @@ against the pattern before being used, so a bad example produces no output
 instead of a bogus check failure.
 """
 
+import inspect
 import re
 
 from django.conf import settings
@@ -31,6 +32,7 @@ from django.core.checks import Error, Warning, register
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.urls import get_resolver
+from django.utils.module_loading import import_string
 
 
 try:  # Python 3.11 and better
@@ -269,6 +271,43 @@ def check_admin_oauth_patterns(app_configs, **kwargs):
             )
         ]
     return [error for index, entry in entries for error in _check_entry(index, entry)]
+
+
+def accepts_user_data(fn):
+    """
+    Whether ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` may be passed ``user_data``.
+    Shared with the view, so that the check and the actual call agree.
+    """
+    try:
+        inspect.signature(fn).bind(None, "", user_data={})
+    except TypeError:
+        return False
+    return True
+
+
+@register()
+def check_create_user_callback(app_configs, **kwargs):
+    path = getattr(settings, "ADMIN_OAUTH_CREATE_USER_CALLBACK", None)
+    if not path:
+        return []
+    try:
+        fn = import_string(path)
+    except ImportError:
+        # The view raises the ImportError on the first login which needs the
+        # callback; reporting it is out of scope for a deprecation check.
+        return []
+    if accepts_user_data(fn):
+        return []
+    return [
+        Warning(
+            f"ADMIN_OAUTH_CREATE_USER_CALLBACK ({path!r}) doesn't accept a"
+            " user_data keyword argument. Calling it without user_data is"
+            " deprecated.",
+            hint="Add a user_data keyword argument (or **kwargs) to the"
+            " callable; it receives the data returned by the OAuth provider.",
+            id="authlib.W004",
+        )
+    ]
 
 
 def _url_patterns():

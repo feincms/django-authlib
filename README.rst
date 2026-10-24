@@ -266,9 +266,12 @@ Staff accounts can also be created on the fly. Set
 ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` to the dotted path of a callable; it is
 called with the request and an address produced by ``ADMIN_OAUTH_PATTERNS``
 when no user with that address exists, and may (but doesn't have to) create
-one. ``"authlib.admin_oauth.views.create_superuser"`` creates superusers. If
-the callable accepts a ``user_data`` keyword argument it also receives the data
-the OAuth provider returned, e.g. to persist the name:
+one. ``"authlib.admin_oauth.views.create_superuser"`` creates superusers. The
+callable also receives the data the OAuth provider returned as a ``user_data``
+keyword argument, e.g. to persist the name. Callables which don't accept
+``user_data`` are still called without it, but that's deprecated: the system
+check ``authlib.W004`` and a ``DeprecationWarning`` at call time point them
+out.
 
 .. code-block:: python
 

@@ -1,5 +1,6 @@
 import base64
 import json
+import warnings
 from contextlib import contextmanager
 from unittest import skipUnless
 from unittest.mock import patch
@@ -343,12 +344,20 @@ class Test(TestCase):
                 created_users.clear()
                 client = Client()
                 state = start_oauth(client, "/admin/__oauth__/")
-                with google_oauth_data(
-                    {"email": email, "email_verified": True, "name": "New User"}
+                with (
+                    google_oauth_data(
+                        {"email": email, "email_verified": True, "name": "New User"}
+                    ),
+                    warnings.catch_warnings(record=True) as caught,
                 ):
+                    warnings.simplefilter("always")
                     response = client.get(f"/admin/__oauth__/?code=bla&state={state}")
                 self.assertRedirects(response, "/admin/")
                 self.assertEqual(created_users, [(email, expected)])
+                self.assertEqual(
+                    [w.category for w in caught],
+                    [] if expected else [DeprecationWarning],
+                )
 
     @patch(
         "authlib.admin_oauth.views.ADMIN_OAUTH_CREATE_USER_CALLBACK",

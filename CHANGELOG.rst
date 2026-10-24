@@ -12,9 +12,10 @@ Next version
 - Documented how to persist the name OAuth providers return using a custom
   ``email_login``.
 - Passed the data returned by the OAuth provider to
-  ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` as a ``user_data`` keyword argument, if
-  the callback accepts one. Callbacks only accepting ``(request, email)`` keep
-  working unchanged.
+  ``ADMIN_OAUTH_CREATE_USER_CALLBACK`` as a ``user_data`` keyword argument.
+  Callbacks only accepting ``(request, email)`` are still called that way, but
+  that's deprecated; the ``authlib.W004`` system check and a
+  ``DeprecationWarning`` point them out.
 
 0.21 (2026-10-20)
 =================

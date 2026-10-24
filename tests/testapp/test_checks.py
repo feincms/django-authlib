@@ -1,7 +1,11 @@
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
-from authlib.admin_oauth.checks import _example_address, check_admin_oauth_patterns
+from authlib.admin_oauth.checks import (
+    _example_address,
+    check_admin_oauth_patterns,
+    check_create_user_callback,
+)
 from authlib.checks import check_authentication_backends
 
 
@@ -143,3 +147,30 @@ class AuthenticationBackendsCheckTest(SimpleTestCase):
 
     def test_projects_without_the_backend(self):
         self.assertEqual(self.ids(["django.contrib.auth.backends.ModelBackend"]), [])
+
+
+def create_user_with_kwargs(request, email, **kwargs):
+    pass
+
+
+def create_user_without_data(request, email):
+    pass
+
+
+class CreateUserCallbackCheckTest(SimpleTestCase):
+    def ids(self, path):
+        with override_settings(ADMIN_OAUTH_CREATE_USER_CALLBACK=path):
+            return [message.id for message in check_create_user_callback(None)]
+
+    def test_callbacks(self):
+        for path, ids in [
+            (None, []),
+            ("authlib.admin_oauth.views.create_superuser", []),
+            ("testapp.test_authlib.create_user_with_data", []),
+            ("testapp.test_checks.create_user_with_kwargs", []),
+            ("testapp.test_checks.create_user_without_data", ["authlib.W004"]),
+            # Import errors are left to the view.
+            ("testapp.test_checks.does_not_exist", []),
+        ]:
+            with self.subTest(path=path):
+                self.assertEqual(self.ids(path), ids)

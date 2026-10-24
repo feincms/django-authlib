@@ -1,6 +1,6 @@
-import inspect
 import logging
 import re
+import warnings
 
 from django.conf import settings
 from django.contrib import auth, messages
@@ -10,6 +10,7 @@ from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
 from django.views.decorators.cache import never_cache
 
+from authlib.admin_oauth.checks import accepts_user_data
 from authlib.views import retrieve_next, set_next_cookie
 
 
@@ -112,14 +113,17 @@ def admin_oauth(request, client_class=None):
 
 def _create_user(request, email, user_data):
     fn = import_string(ADMIN_OAUTH_CREATE_USER_CALLBACK)
-    try:
-        inspect.signature(fn).bind(request, email, user_data=user_data)
-    except TypeError:
-        # Callbacks written before user_data was passed only accept
-        # (request, email).
-        fn(request, email)
-    else:
+    if accepts_user_data(fn):
         fn(request, email, user_data=user_data)
+    else:
+        warnings.warn(
+            f"ADMIN_OAUTH_CREATE_USER_CALLBACK ({ADMIN_OAUTH_CREATE_USER_CALLBACK!r})"
+            " doesn't accept a user_data keyword argument. Calling it without"
+            " user_data is deprecated.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        fn(request, email)
 
 
 def create_superuser(request, email, **kwargs):

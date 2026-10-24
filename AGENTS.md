@@ -61,8 +61,12 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   (`ADMIN_OAUTH_CREATE_USER_CALLBACK`). `checks.py` holds the system checks
   for that setting (registered from `apps.py`'s `ready()`; the app label
   stays `admin_oauth`), including a tiny example-string generator over the
-  parsed regex, and the checks for `disable_passwords()`
-  (`authlib.E011`/`E012`/`W003`).
+  parsed regex, the checks for `disable_passwords()`
+  (`authlib.E011`/`E012`/`W003`), and `authlib.W004` for an
+  `ADMIN_OAUTH_CREATE_USER_CALLBACK` without a `user_data` argument (the
+  deprecated signature). `accepts_user_data()` is shared with the view, which
+  emits a `DeprecationWarning` for the same callbacks; an unimportable
+  callback path is left to the view's `ImportError`.
 
 ## Known nuances / open items (as of 2026-09-07)
 

@@ -9,6 +9,8 @@ Next version
   ``url()``, which was removed in Django 4.0.
 - Documented the ``email_login`` and ``post_login_response`` arguments of the
   bundled views, e.g. for flagging sessions established through OAuth.
+- Documented how to persist the name OAuth providers return using a custom
+  ``email_login``.
 
 0.21 (2026-10-20)
 =================

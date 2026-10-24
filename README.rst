@@ -161,6 +161,23 @@ provider:
 ``views.login`` accepts ``post_login_response`` too, and
 ``views.email_registration`` accepts both.
 
+``views.oauth2`` passes the rest of the data it got from the provider to
+``email_login`` as ``user_data``. All bundled clients provide a ``full_name``
+there (when the provider has one), which allows persisting the name on a user
+model which has a field for it (``authlib.little_auth.User`` hasn't):
+
+.. code-block:: python
+
+    def email_login_with_name(request, *, email, user_data=None):
+        user, created = views.email_login(request, email=email)
+        if user and not user.full_name and user_data and user_data.get("full_name"):
+            user.full_name = user_data["full_name"]
+            user.save(update_fields=["full_name"])
+        return user, created
+
+``views.email_registration`` calls ``email_login`` without ``user_data``, since
+a magic link only carries the email address.
+
 
 Admin OAuth2
 ============

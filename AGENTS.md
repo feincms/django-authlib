@@ -72,7 +72,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
 
 - **`RolePermissionsBackend` used to be `PermissionsBackend` and used to
   authenticate passwords.** It extended `ModelBackend` while the docs
-  (rightly, for deny-pattern reasons) tell you to list it *first*, so
+  (rightly, for deny-pattern reasons) tell you to list it _first_, so
   `authenticate(username=…, password=…)` was served by this class in every
   project -- verified by `user.backend` pointing at it after a password
   login. Nobody could see that from the name or the docs. It's a
@@ -86,19 +86,19 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   authenticating backend's path. Don't add a `PermissionsBackend` alias --
   the whole mechanism depends on the old name being gone.
 - **`ADMIN_OAUTH_PATTERNS` callables receive the match, not the address**, so
-  `match[0]` is only the *matched part* of the address. The natural-looking
+  `match[0]` is only the _matched part_ of the address. The natural-looking
   `(r"@example\.com$", lambda match: match[0])` therefore resolves to
   `"@example.com"` and can never authenticate anyone — silently, because the
   visitor just gets "No matching staff users for email address ..." naming
-  *their* address, which looks perfectly fine. Seen in the wild on
+  _their_ address, which looks perfectly fine. Seen in the wild on
   bernergesundheit.ch (2026-09-07): SSO was dead for a whole domain and
   everyone quietly kept using passwords. Two mitigations, both deliberately
   shaped:
-  - `checks.py` cannot reason about a callable, so it *runs* it: generate an
+  - `checks.py` cannot reason about a callable, so it _runs_ it: generate an
     example address from the pattern's own parse tree (`re._parser`, falling
     back to `sre_parse` before 3.11), pass the match in, and validate what
     comes back (`authlib.E004`). The generator is only a probe factory and is
-    self-verifying — a candidate must be a valid email address *and* actually
+    self-verifying — a candidate must be a valid email address _and_ actually
     match the pattern before it's used, and unsupported nodes (lookarounds,
     backreferences, ...) raise `_UnsupportedError` so the pattern is skipped
     silently. Failure mode is "says nothing", never a false alarm; keep it
@@ -111,7 +111,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
     `views.ADMIN_OAUTH_PATTERNS` are invisible to it (intentional — a
     deployment gets checked on the setting).
   - the view logs a warning to the `authlib.admin_oauth` logger listing
-    *every* address the patterns produced (`tried`), which is the piece that
+    _every_ address the patterns produced (`tried`), which is the piece that
     actually explains a failed login. It deliberately does **not** go into the
     `messages.error()` shown in the browser: anyone with an account at the
     OAuth provider can reach that view, and the resolved addresses would leak
@@ -148,7 +148,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   a real cookie) is unaffected either way. Prefer a server-side session
   backend if the one-time-use property matters to you.
 - **Microsoft's `email` claim is only trusted together with `xms_edov`.**
-  Entra ID doesn't verify the `email` claim (an admin of *any* tenant can set
+  Entra ID doesn't verify the `email` claim (an admin of _any_ tenant can set
   it, the "nOAuth" problem), and the default `common` endpoints accept every
   tenant. `preferred_username` is used first: for Entra accounts it is the
   UPN, whose domain must be verified in the user's tenant, and Microsoft
@@ -185,7 +185,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   there means no password reaches a backend. An authentication
   backend cannot do this job — `authenticate()` is global and a backend has no
   way to know it is serving the admin login form. The password change half
-  *cannot* work that way: `AdminSite.password_change_form` only exists in
+  _cannot_ work that way: `AdminSite.password_change_form` only exists in
   Django 6.0 and better, so on 3.2--5.2 setting it does nothing at all. Hence
   the instance-level replacement of `AdminSite.password_change`, and hence its
   one weakness: `get_urls()` captures the bound method, so a call which arrives
@@ -201,7 +201,7 @@ Published to PyPI as `django-authlib`. Repo: feincms/django-authlib.
   to ever run. Registering unconditionally and loading the URLconf from inside
   the check inverts that ordering. A URLconf which cannot be loaded produces no
   messages at all — Django's own checks report it.
-- `authlib.W003` deliberately does *not* look for `LoginView`. A frontend login
+- `authlib.W003` deliberately does _not_ look for `LoginView`. A frontend login
   view with passwords is common and legitimate, and warning about it would be
   noise which gets the whole check silenced — which would take the password
   reset warning down with it. The views it does look for are found by walking

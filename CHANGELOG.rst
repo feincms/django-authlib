@@ -5,6 +5,9 @@ Change log
 Next version
 ============
 
+0.22 (2026-10-28)
+=================
+
 - Updated the URLconf examples in the README to use ``path()`` instead of
   ``url()``, which was removed in Django 4.0.
 - Documented the ``email_login`` and ``post_login_response`` arguments of the

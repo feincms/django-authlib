@@ -5,6 +5,9 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+# Django defaults to America/Chicago; its DST transitions made Django 3.2
+# (pytz) raise AmbiguousTimeError when rendering error reports.
+TIME_ZONE = "UTC"
 
 INSTALLED_APPS = [
     "django.contrib.auth",

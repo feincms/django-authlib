@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [
   { name = "Matthias Kestenholz", email = "mk@feinheit.ch" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Web Environment",
@@ -21,7 +21,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -46,7 +45,7 @@ version.path = "authlib/__init__.py"
 build.include = [ "authlib/" ]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 fix = true
 show-fixes = true
 lint.extend-select = [
